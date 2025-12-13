@@ -6,13 +6,15 @@ use App\Enum\TaskStatus;
 use App\Repository\TaskRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use DateTimeImmutable;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
+#[ORM\Table(name: 'tasks')]
 class Task
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -21,14 +23,21 @@ class Task
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(enumType: TaskStatus::class)]
-    private ?TaskStatus $status = null;
+    #[ORM\Column(type: 'string', enumType: TaskStatus::class, options: ['default' => 'todo'])]
+    private TaskStatus $status = TaskStatus::TODO;
 
-    #[ORM\Column]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private ?\DateTimeImmutable $updatedAt = null;
+
+    public function __construct()
+    {
+        $now = new DateTimeImmutable();
+        $this->createdAt = $now;
+        $this->updatedAt = $now;
+    }
 
     public function getId(): ?int
     {
@@ -59,7 +68,7 @@ class Task
         return $this;
     }
 
-    public function getStatus(): ?TaskStatus
+    public function getStatus(): TaskStatus
     {
         return $this->status;
     }
@@ -93,5 +102,11 @@ class Task
         $this->updatedAt = $updatedAt;
 
         return $this;
+    }
+
+    #[ORM\PreUpdate]
+    public function updateTimestamps(): void
+    {
+        $this->updatedAt = new DateTimeImmutable();
     }
 }
