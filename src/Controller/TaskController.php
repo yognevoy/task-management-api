@@ -25,7 +25,7 @@ class TaskController extends AbstractController
     {
         $tasks = $this->taskRepository->findAll();
 
-        return $this->json($tasks);
+        return $this->json($tasks, context: ['groups' => 'task:read']);
     }
 
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
