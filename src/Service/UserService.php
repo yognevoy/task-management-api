@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\User;
+use App\Exception\ValidationException;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -27,13 +28,38 @@ class UserService
 
         $errors = $this->validator->validate($user);
         if (count($errors) > 0) {
-            $errorsString = (string)$errors;
-            throw new \InvalidArgumentException('Validation failed: ' . $errorsString);
+            $messages = [];
+            foreach ($errors as $error) {
+                $messages[] = $error->getMessage();
+            }
+            throw new ValidationException($messages);
         }
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
         return $user;
+    }
+
+    public function updateUser(User $user): User
+    {
+        $errors = $this->validator->validate($user);
+        if (count($errors) > 0) {
+            $messages = [];
+            foreach ($errors as $error) {
+                $messages[] = $error->getMessage();
+            }
+            throw new ValidationException($messages);
+        }
+
+        $this->entityManager->flush();
+
+        return $user;
+    }
+
+    public function deleteUser(User $user): void
+    {
+        $this->entityManager->remove($user);
+        $this->entityManager->flush();
     }
 }
