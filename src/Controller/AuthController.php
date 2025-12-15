@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Exception\ValidationException;
 use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -39,13 +40,14 @@ class AuthController extends AbstractController
                 'message' => 'User registered successfully',
                 'user_id' => $user->getId()
             ], Response::HTTP_CREATED);
-        } catch (\InvalidArgumentException $e) {
+        } catch (ValidationException $e) {
             return $this->json([
-                'error' => 'Validation failed',
+                'error' => $e->getMessage(),
+                'details' => $e->getErrors(),
             ], Response::HTTP_BAD_REQUEST);
         } catch (\Exception $e) {
             return $this->json([
-                'error' => 'Registration failed',
+                'error' => 'Registration failed: ' . $e->getMessage(),
             ], Response::HTTP_BAD_REQUEST);
         }
     }
