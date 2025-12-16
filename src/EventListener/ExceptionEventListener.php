@@ -2,10 +2,9 @@
 
 namespace App\EventListener;
 
-use App\Exception\AccessDeniedException;
-use App\Exception\UserNotFoundException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ExceptionEventListener
 {
@@ -13,14 +12,7 @@ class ExceptionEventListener
     {
         $exception = $event->getThrowable();
 
-        if ($exception instanceof AccessDeniedException) {
-            $response = new JsonResponse(
-                ['error' => $exception->getMessage()],
-                $exception->getStatusCode()
-            );
-            $event->setResponse($response);
-            $event->stopPropagation();
-        } elseif ($exception instanceof UserNotFoundException) {
+        if ($exception instanceof HttpExceptionInterface) {
             $response = new JsonResponse(
                 ['error' => $exception->getMessage()],
                 $exception->getStatusCode()
