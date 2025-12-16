@@ -31,6 +31,11 @@ class Task
     #[Groups(['task:read', 'task:write'])]
     private TaskStatus $status = TaskStatus::TODO;
 
+    #[ORM\ManyToOne(inversedBy: 'tasks')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['task:read'])]
+    private User $owner;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     #[Groups(['task:read'])]
     private ?\DateTimeImmutable $createdAt = null;
@@ -44,6 +49,18 @@ class Task
         $now = new DateTimeImmutable();
         $this->createdAt = $now;
         $this->updatedAt = $now;
+    }
+
+    public function getOwner(): ?User
+    {
+        return $this->owner;
+    }
+
+    public function setOwner(User $owner): static
+    {
+        $this->owner = $owner;
+
+        return $this;
     }
 
     public function getId(): ?int
