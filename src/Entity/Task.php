@@ -33,7 +33,7 @@ class Task
 
     #[ORM\ManyToOne(inversedBy: 'tasks')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['task:read'])]
+    #[Groups(['task:write'])]
     private User $owner;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
@@ -43,6 +43,12 @@ class Task
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     #[Groups(['task:read'])]
     private ?\DateTimeImmutable $updatedAt = null;
+
+    #[Groups(['task:read'])]
+    public function getOwnerId(): ?int
+    {
+        return $this->owner?->getId();
+    }
 
     public function __construct()
     {
