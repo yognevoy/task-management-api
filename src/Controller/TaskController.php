@@ -6,6 +6,7 @@ use App\Entity\Task;
 use App\Entity\User;
 use App\Enum\TaskStatus;
 use App\Exception\AccessDeniedException;
+use App\Exception\UserNotFoundException;
 use App\Repository\TaskRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -30,7 +31,7 @@ class TaskController extends AbstractController
         if ($ownerId) {
             $user = $this->entityManager->getRepository(User::class)->find($ownerId);
             if (!$user) {
-                return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+                throw new UserNotFoundException();
             }
 
             $tasks = $this->taskRepository->findByOwner($user);
