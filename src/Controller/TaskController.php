@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Task;
+use App\Entity\User;
 use App\Enum\TaskStatus;
 use App\Repository\TaskRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,8 +22,21 @@ class TaskController extends AbstractController
     ) {}
 
     #[Route('', name: 'get_all', methods: ['GET'])]
-    public function getAllTasks(): JsonResponse
+    public function getAllTasks(Request $request): JsonResponse
     {
+        $ownerId = $request->query->getInt('owner');
+
+        if ($ownerId) {
+            $user = $this->entityManager->getRepository(User::class)->find($ownerId);
+            if (!$user) {
+                return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            $tasks = $this->taskRepository->findByOwner($user);
+
+            return $this->json($tasks, context: ['groups' => 'task:read']);
+        }
+
         $tasks = $this->taskRepository->findAll();
 
         return $this->json($tasks, context: ['groups' => 'task:read']);
@@ -37,7 +51,7 @@ class TaskController extends AbstractController
             return $this->json(['error' => 'Task not found'], Response::HTTP_NOT_FOUND);
         }
 
-        return $this->json($task);
+        return $this->json($task, context: ['groups' => 'task:read']);
     }
 
     #[Route('', name: 'create', methods: ['POST'])]
@@ -65,10 +79,17 @@ class TaskController extends AbstractController
             }
         }
 
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof User) {
+            $task->setOwner($currentUser);
+        } else {
+            return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
+        }
+
         $this->entityManager->persist($task);
         $this->entityManager->flush();
 
-        return $this->json($task, Response::HTTP_CREATED);
+        return $this->json($task, Response::HTTP_CREATED, context: ['groups' => 'task:read']);
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
@@ -101,7 +122,7 @@ class TaskController extends AbstractController
 
         $this->entityManager->flush();
 
-        return $this->json($task);
+        return $this->json($task, context: ['groups' => 'task:read']);
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
