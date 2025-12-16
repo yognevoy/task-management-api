@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Task;
 use App\Entity\User;
 use App\Enum\TaskStatus;
+use App\Exception\AccessDeniedException;
 use App\Repository\TaskRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -80,11 +81,11 @@ class TaskController extends AbstractController
         }
 
         $currentUser = $this->getUser();
-        if ($currentUser instanceof User) {
-            $task->setOwner($currentUser);
-        } else {
-            return $this->json(['error' => 'Access denied'], Response::HTTP_FORBIDDEN);
+        if (!$currentUser instanceof User) {
+            throw new AccessDeniedException();
         }
+
+        $task->setOwner($currentUser);
 
         $this->entityManager->persist($task);
         $this->entityManager->flush();
