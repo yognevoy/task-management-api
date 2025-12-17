@@ -42,6 +42,11 @@ class Task
     #[ORM\JoinColumn(nullable: true)]
     private ?self $parent = null;
 
+    #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'tasks')]
+    #[ORM\JoinColumn(nullable: true)]
+    #[Groups(['task:write'])]
+    private ?Project $project = null;
+
     /** @var Collection<int, self> */
     #[ORM\OneToMany(mappedBy: 'parent', targetEntity: self::class, cascade: ['persist', 'remove'])]
     private Collection $subtasks;
@@ -190,6 +195,24 @@ class Task
         $this->updatedAt = $updatedAt;
 
         return $this;
+    }
+
+    public function getProject(): ?Project
+    {
+        return $this->project;
+    }
+
+    public function setProject(?Project $project): static
+    {
+        $this->project = $project;
+
+        return $this;
+    }
+
+    #[Groups(['task:read'])]
+    public function getProjectId(): ?int
+    {
+        return $this->project?->getId();
     }
 
     #[ORM\PreUpdate]

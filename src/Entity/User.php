@@ -47,12 +47,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @var Collection<int, Task> Collection of user's tasks
      */
-    #[ORM\OneToMany(targetEntity: Task::class, mappedBy: 'owner', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: Task::class, mappedBy: 'owner', cascade: ['persist'])]
     private Collection $tasks;
+
+    /**
+     * @var Collection<int, Project> Collection of user's projects
+     */
+    #[ORM\OneToMany(targetEntity: Project::class, mappedBy: 'owner', cascade: ['persist'])]
+    private Collection $projects;
 
     public function __construct()
     {
         $this->tasks = new ArrayCollection();
+        $this->projects = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -66,6 +73,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getTasks(): Collection
     {
         return $this->tasks;
+    }
+
+    /**
+     * @return Collection<int, Project>
+     */
+    public function getProjects(): Collection
+    {
+        return $this->projects;
     }
 
     public function getEmail(): ?string
