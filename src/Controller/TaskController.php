@@ -6,6 +6,7 @@ use App\Entity\Task;
 use App\Entity\User;
 use App\Enum\TaskStatus;
 use App\Exception\AccessDeniedException;
+use App\Exception\CircularTaskReferenceException;
 use App\Exception\ParentTaskNotFoundException;
 use App\Exception\TaskNotFoundException;
 use App\Exception\UserNotFoundException;
@@ -140,6 +141,11 @@ class TaskController extends AbstractController
                 if (!$parentTask) {
                     throw new ParentTaskNotFoundException();
                 }
+
+                if ($parentTask->getId() === $task->getId()) {
+                    throw new CircularTaskReferenceException();
+                }
+
                 $task->setParent($parentTask);
             }
         }
