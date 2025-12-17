@@ -92,6 +92,21 @@ class TaskController extends AbstractController
             $task->setParent($parentTask);
         }
 
+        if (!empty($data['projectId'])) {
+            $project = $this->entityManager->getRepository(\App\Entity\Project::class)->find($data['projectId']);
+            if (!$project) {
+                return $this->json(['error' => 'Project not found'], Response::HTTP_BAD_REQUEST);
+            }
+
+            // Check if the user owns the project
+            $currentUser = $this->getUser();
+            if (!$currentUser instanceof User || $currentUser->getId() !== $project->getOwner()->getId()) {
+                throw new AccessDeniedException();
+            }
+
+            $task->setProject($project);
+        }
+
         $currentUser = $this->getUser();
         if (!$currentUser instanceof User) {
             throw new AccessDeniedException();
@@ -147,6 +162,25 @@ class TaskController extends AbstractController
                 }
 
                 $task->setParent($parentTask);
+            }
+        }
+
+        if (array_key_exists('projectId', $data)) {
+            if ($data['projectId'] === null || $data['projectId'] === 0) {
+                $task->setProject(null);
+            } else {
+                $project = $this->entityManager->getRepository(\App\Entity\Project::class)->find($data['projectId']);
+                if (!$project) {
+                    return $this->json(['error' => 'Project not found'], Response::HTTP_BAD_REQUEST);
+                }
+
+                // Check if the user owns the project
+                $currentUser = $this->getUser();
+                if (!$currentUser instanceof User || $currentUser->getId() !== $project->getOwner()->getId()) {
+                    throw new AccessDeniedException();
+                }
+
+                $task->setProject($project);
             }
         }
 
