@@ -6,6 +6,8 @@ use App\Entity\Task;
 use App\Entity\User;
 use App\Enum\TaskStatus;
 use App\Exception\AccessDeniedException;
+use App\Exception\ParentTaskNotFoundException;
+use App\Exception\TaskNotFoundException;
 use App\Exception\UserNotFoundException;
 use App\Repository\TaskRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -81,6 +83,14 @@ class TaskController extends AbstractController
             }
         }
 
+        if (!empty($data['parentId'])) {
+            $parentTask = $this->taskRepository->find($data['parentId']);
+            if (!$parentTask) {
+                throw new ParentTaskNotFoundException();
+            }
+            $task->setParent($parentTask);
+        }
+
         $currentUser = $this->getUser();
         if (!$currentUser instanceof User) {
             throw new AccessDeniedException();
@@ -122,6 +132,18 @@ class TaskController extends AbstractController
             }
         }
 
+        if (array_key_exists('parentId', $data)) {
+            if ($data['parentId'] === null || $data['parentId'] === 0) {
+                $task->setParent(null);
+            } else {
+                $parentTask = $this->taskRepository->find($data['parentId']);
+                if (!$parentTask) {
+                    throw new ParentTaskNotFoundException();
+                }
+                $task->setParent($parentTask);
+            }
+        }
+
         $this->entityManager->flush();
 
         return $this->json($task, context: ['groups' => 'task:read']);
@@ -140,5 +162,19 @@ class TaskController extends AbstractController
         $this->entityManager->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    #[Route('/{id}/subtasks', name: 'get_subtasks', methods: ['GET'])]
+    public function getSubtasks(int $id): JsonResponse
+    {
+        $parentTask = $this->taskRepository->find($id);
+
+        if (!$parentTask) {
+            throw new TaskNotFoundException();
+        }
+
+        $subtasks = $this->taskRepository->findByParent($parentTask);
+
+        return $this->json($subtasks, context: ['groups' => 'task:read']);
     }
 }

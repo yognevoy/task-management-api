@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Enum\TaskStatus;
 use App\Repository\TaskRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use DateTimeImmutable;
@@ -36,6 +38,14 @@ class Task
     #[Groups(['task:write'])]
     private User $owner;
 
+    #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'subtasks')]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?self $parent = null;
+
+    /** @var Collection<int, self> */
+    #[ORM\OneToMany(mappedBy: 'parent', targetEntity: self::class, cascade: ['persist', 'remove'])]
+    private Collection $subtasks;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     #[Groups(['task:read'])]
     private ?\DateTimeImmutable $createdAt = null;
@@ -55,6 +65,54 @@ class Task
         $now = new DateTimeImmutable();
         $this->createdAt = $now;
         $this->updatedAt = $now;
+        $this->subtasks = new ArrayCollection();
+    }
+
+    public function getParent(): ?self
+    {
+        return $this->parent;
+    }
+
+    public function setParent(?self $parent): static
+    {
+        $this->parent = $parent;
+
+        return $this;
+    }
+
+    /**
+     * Returns only the ID of the parent task, not the full object
+     */
+    #[Groups(['task:read'])]
+    public function getParentId(): ?int
+    {
+        return $this->parent?->getId();
+    }
+
+    public function getSubtasks(): Collection
+    {
+        return $this->subtasks;
+    }
+
+    public function addSubtask(self $subtask): static
+    {
+        if (!$this->subtasks->contains($subtask)) {
+            $this->subtasks->add($subtask);
+            $subtask->setParent($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSubtask(self $subtask): static
+    {
+        if ($this->subtasks->removeElement($subtask)) {
+            if ($subtask->getParent() === $this) {
+                $subtask->setParent(null);
+            }
+        }
+
+        return $this;
     }
 
     public function getOwner(): ?User
