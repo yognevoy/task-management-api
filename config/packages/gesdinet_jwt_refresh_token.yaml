@@ -1,0 +1,6 @@
+gesdinet_jwt_refresh_token:
+    ttl: 2419200
+    ttl_update: true
+    firewall: api
+    user_provider: app_user_provider
+    single_use: false
