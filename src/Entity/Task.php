@@ -51,6 +51,10 @@ class Task
     #[ORM\OneToMany(mappedBy: 'parent', targetEntity: self::class, cascade: ['persist', 'remove'])]
     private Collection $subtasks;
 
+    /** @var Collection<int, Comment> */
+    #[ORM\OneToMany(mappedBy: 'task', targetEntity: Comment::class, cascade: ['persist', 'remove'])]
+    private Collection $comments;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     #[Groups(['task:read'])]
     private ?\DateTimeImmutable $createdAt = null;
@@ -71,6 +75,7 @@ class Task
         $this->createdAt = $now;
         $this->updatedAt = $now;
         $this->subtasks = new ArrayCollection();
+        $this->comments = new ArrayCollection();
     }
 
     public function getParent(): ?self
@@ -213,6 +218,36 @@ class Task
     public function getProjectId(): ?int
     {
         return $this->project?->getId();
+    }
+
+    /**
+     * @return Collection<int, Comment>
+     */
+    public function getComments(): Collection
+    {
+        return $this->comments;
+    }
+
+    public function addComment(Comment $comment): static
+    {
+        if (!$this->comments->contains($comment)) {
+            $this->comments->add($comment);
+            $comment->setTask($this);
+        }
+
+        return $this;
+    }
+
+    public function removeComment(Comment $comment): static
+    {
+        if ($this->comments->removeElement($comment)) {
+            // set the owning side to null (unless already changed)
+            if ($comment->getTask() === $this) {
+                $comment->setTask(null);
+            }
+        }
+
+        return $this;
     }
 
     #[ORM\PreUpdate]

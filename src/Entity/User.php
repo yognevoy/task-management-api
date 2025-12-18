@@ -56,10 +56,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Project::class, mappedBy: 'owner', cascade: ['persist'])]
     private Collection $projects;
 
+    /** @var Collection<int, Comment> */
+    #[ORM\OneToMany(mappedBy: 'author', targetEntity: Comment::class, cascade: ['persist', 'remove'])]
+    private Collection $comments;
+
     public function __construct()
     {
         $this->tasks = new ArrayCollection();
         $this->projects = new ArrayCollection();
+        $this->comments = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -154,6 +159,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * Ensure the session doesn't contain actual password hashes by CRC32C-hashing them, as supported since Symfony 7.3.
      */
+    /**
+     * @return Collection<int, Comment>
+     */
+    public function getComments(): Collection
+    {
+        return $this->comments;
+    }
+
+    public function addComment(Comment $comment): static
+    {
+        if (!$this->comments->contains($comment)) {
+            $this->comments->add($comment);
+            $comment->setAuthor($this);
+        }
+
+        return $this;
+    }
+
+    public function removeComment(Comment $comment): static
+    {
+        if ($this->comments->removeElement($comment)) {
+            // set the owning side to null (unless already changed)
+            if ($comment->getAuthor() === $this) {
+                $comment->setAuthor(null);
+            }
+        }
+
+        return $this;
+    }
+
     public function __serialize(): array
     {
         $data = (array) $this;
