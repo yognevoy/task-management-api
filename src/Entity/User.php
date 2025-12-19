@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\UserRole;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -117,19 +118,46 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $roles = $this->roles;
         // guarantee every user at least has ROLE_USER
-        $roles[] = 'ROLE_USER';
+        $roles[] = UserRole::USER->value;
 
         return array_unique($roles);
     }
 
     /**
-     * @param list<string> $roles
+     * @param list<UserRole|string> $roles
      */
     public function setRoles(array $roles): static
     {
-        $this->roles = $roles;
+        $stringRoles = array_map(function ($role) {
+            return $role instanceof UserRole ? $role->value : $role;
+        }, $roles);
+
+        $this->roles = $stringRoles;
 
         return $this;
+    }
+
+    public function addRole(UserRole|string $role): static
+    {
+        $roleValue = $role instanceof UserRole ? $role->value : $role;
+        if (!in_array($roleValue, $this->roles)) {
+            $this->roles[] = $roleValue;
+        }
+
+        return $this;
+    }
+
+    public function removeRole(UserRole|string $role): static
+    {
+        $roleValue = $role instanceof UserRole ? $role->value : $role;
+        $this->roles = array_diff($this->roles, [$roleValue]);
+
+        return $this;
+    }
+
+    public function isAdmin(): bool
+    {
+        return in_array(UserRole::ADMIN->value, $this->roles);
     }
 
     /**

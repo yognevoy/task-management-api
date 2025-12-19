@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\User;
+use App\Enum\UserRole;
 use App\Exception\ValidationException;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,7 +20,7 @@ class UserService
     ) {
     }
 
-    public function registerUser(string $email, string $password, array $roles = ['ROLE_USER']): User
+    public function registerUser(string $email, string $password, array $roles = [UserRole::USER]): User
     {
         $user = new User();
         $user->setEmail($email);
