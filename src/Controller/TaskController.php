@@ -35,25 +35,18 @@ class TaskController extends AbstractController
         }
 
         if (!$currentUser->isAdmin()) {
-            $ownedTasks = $this->taskRepository->findByOwner($currentUser);
+            $qb = $this->entityManager->createQueryBuilder();
+            $tasks = $qb
+                ->select('t')
+                ->from(Task::class, 't')
+                ->leftJoin('t.project', 'p')
+                ->where('t.owner = :user OR p.owner = :user')
+                ->setParameter('user', $currentUser)
+                ->orderBy('t.id', 'ASC')
+                ->getQuery()
+                ->getResult();
 
-            $ownedProjects = $currentUser->getProjects();
-            $projectTasks = [];
-            foreach ($ownedProjects as $project) {
-                $projectTasks = array_merge($projectTasks, $this->taskRepository->findByProject($project));
-            }
-
-            $allTasks = array_merge($ownedTasks, $projectTasks);
-
-            $taskMap = [];
-            foreach ($allTasks as $task) {
-                if (!isset($seenIds[$task->getId()])) {
-                    $taskMap[$task->getId()] = $task;
-                }
-            }
-            $uniqueTasks = array_values($taskMap);
-
-            return $this->json($uniqueTasks, context: ['groups' => 'task:read']);
+            return $this->json($tasks, context: ['groups' => 'task:read']);
         }
 
         $tasks = $this->taskRepository->findAll();
