@@ -51,18 +51,4 @@ class AuthController extends AbstractController
             ], Response::HTTP_BAD_REQUEST);
         }
     }
-
-    #[Route('/login_check', name: 'api_login_check', methods: ['POST'])]
-    public function login(): JsonResponse
-    {
-        return $this->json([]);
-    }
-
-    #[Route('/logout', name: 'api_logout', methods: ['POST'])]
-    public function logout(): JsonResponse
-    {
-        return $this->json([
-            'message' => 'Logged out successfully'
-        ]);
-    }
 }
