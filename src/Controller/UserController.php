@@ -2,8 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Exception\ValidationException;
 use App\Repository\UserRepository;
+use App\Security\Voter\UserVoter;
 use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -11,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/users', name: 'api_users_')]
 class UserController extends AbstractController
@@ -31,26 +34,16 @@ class UserController extends AbstractController
     }
 
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
-    public function getOne(int $id): JsonResponse
+    #[IsGranted(UserVoter::VIEW, subject: 'user')]
+    public function getOne(User $user): JsonResponse
     {
-        $user = $this->userRepository->find($id);
-
-        if (!$user) {
-            return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
-        }
-
         return $this->json($user, context: ['groups' => 'user:read']);
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
-    public function updateUser(int $id, Request $request): JsonResponse
+    #[IsGranted(UserVoter::EDIT, subject: 'user')]
+    public function updateUser(User $user, Request $request): JsonResponse
     {
-        $user = $this->userRepository->find($id);
-
-        if (!$user) {
-            return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
-        }
-
         $data = json_decode($request->getContent(), true);
 
         if (!empty($data['email'])) {
@@ -81,14 +74,9 @@ class UserController extends AbstractController
     }
 
     #[Route('/{id}', name: 'api_user_delete', methods: ['DELETE'])]
-    public function deleteUser(int $id): JsonResponse
+    #[IsGranted(UserVoter::DELETE, subject: 'user')]
+    public function deleteUser(User $user): JsonResponse
     {
-        $user = $this->userRepository->find($id);
-
-        if (!$user) {
-            return $this->json(['error' => 'User not found'], Response::HTTP_NOT_FOUND);
-        }
-
         try {
             $this->userService->deleteUser($user);
             return $this->json(null, Response::HTTP_NO_CONTENT);
