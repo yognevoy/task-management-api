@@ -6,16 +6,18 @@ use App\Entity\Comment;
 use App\Entity\Task;
 use App\Entity\User;
 use App\Exception\AccessDeniedException;
-use App\Exception\CommentNotFoundException;
 use App\Exception\TaskNotFoundException;
 use App\Exception\UserNotFoundException;
 use App\Repository\CommentRepository;
+use App\Security\Voter\CommentVoter;
+use App\Security\Voter\TaskVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/comments', name: 'api_comments_')]
 class CommentController extends AbstractController
@@ -31,11 +33,18 @@ class CommentController extends AbstractController
         $taskId = $request->query->getInt('task');
         $authorId = $request->query->getInt('author');
 
+        $currentUser = $this->getUser();
+        if (!$currentUser instanceof User) {
+            throw new AccessDeniedException();
+        }
+
         if ($taskId) {
             $task = $this->entityManager->getRepository(Task::class)->find($taskId);
             if (!$task) {
                 throw new TaskNotFoundException();
             }
+
+            $this->denyAccessUnlessGranted(TaskVoter::VIEW, $task);
 
             $comments = $this->commentRepository->findByTask($task);
 
@@ -48,7 +57,27 @@ class CommentController extends AbstractController
                 throw new UserNotFoundException();
             }
 
+            if ($currentUser->getId() !== $user->getId() && !$currentUser->isAdmin()) {
+                throw new AccessDeniedException();
+            }
+
             $comments = $this->commentRepository->findByAuthor($user);
+
+            return $this->json($comments, context: ['groups' => 'comment:read']);
+        }
+
+        if (!$currentUser->isAdmin()) {
+            $qb = $this->entityManager->createQueryBuilder();
+            $comments = $qb
+                ->select('c')
+                ->from(Comment::class, 'c')
+                ->join('c.task', 't')
+                ->leftJoin('t.project', 'p')
+                ->where('t.owner = :user OR p.owner = :user')
+                ->setParameter('user', $currentUser)
+                ->orderBy('c.createdAt', 'ASC')
+                ->getQuery()
+                ->getResult();
 
             return $this->json($comments, context: ['groups' => 'comment:read']);
         }
@@ -59,14 +88,9 @@ class CommentController extends AbstractController
     }
 
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
-    public function getComment(int $id): JsonResponse
+    #[IsGranted(CommentVoter::VIEW, subject: 'comment')]
+    public function getComment(Comment $comment): JsonResponse
     {
-        $comment = $this->commentRepository->find($id);
-
-        if (!$comment) {
-            throw new CommentNotFoundException();
-        }
-
         return $this->json($comment, context: ['groups' => 'comment:read']);
     }
 
@@ -88,6 +112,8 @@ class CommentController extends AbstractController
             throw new TaskNotFoundException();
         }
 
+        $this->denyAccessUnlessGranted(TaskVoter::VIEW, $task);
+
         $comment = new Comment();
         $comment->setContent($data['content']);
         $comment->setTask($task);
@@ -106,14 +132,9 @@ class CommentController extends AbstractController
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
-    public function updateComment(int $id, Request $request): JsonResponse
+    #[IsGranted(CommentVoter::EDIT, subject: 'comment')]
+    public function updateComment(Comment $comment, Request $request): JsonResponse
     {
-        $comment = $this->commentRepository->find($id);
-
-        if (!$comment) {
-            throw new CommentNotFoundException();
-        }
-
         $data = json_decode($request->getContent(), true);
 
         if (isset($data['content'])) {
@@ -126,14 +147,9 @@ class CommentController extends AbstractController
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
-    public function deleteComment(int $id): JsonResponse
+    #[IsGranted(CommentVoter::DELETE, subject: 'comment')]
+    public function deleteComment(Comment $comment): JsonResponse
     {
-        $comment = $this->commentRepository->find($id);
-
-        if (!$comment) {
-            throw new CommentNotFoundException();
-        }
-
         $this->entityManager->remove($comment);
         $this->entityManager->flush();
 
@@ -148,6 +164,8 @@ class CommentController extends AbstractController
         if (!$task) {
             throw new TaskNotFoundException();
         }
+
+        $this->denyAccessUnlessGranted(TaskVoter::VIEW, $task);
 
         $comments = $this->commentRepository->findByTask($task);
 
