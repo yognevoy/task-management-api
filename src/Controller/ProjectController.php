@@ -6,16 +6,17 @@ use App\Entity\Project;
 use App\Entity\User;
 use App\Exception\AccessDeniedException;
 use App\Exception\ProjectHasTasksException;
-use App\Exception\ProjectNotFoundException;
 use App\Exception\UserNotFoundException;
 use App\Repository\ProjectRepository;
 use App\Repository\TaskRepository;
+use App\Security\Voter\ProjectVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/projects', name: 'api_projects_')]
 class ProjectController extends AbstractController
@@ -48,14 +49,9 @@ class ProjectController extends AbstractController
     }
 
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
-    public function getProject(int $id): JsonResponse
+    #[IsGranted(ProjectVoter::VIEW, subject: 'project')]
+    public function getProject(Project $project): JsonResponse
     {
-        $project = $this->projectRepository->find($id);
-
-        if (!$project) {
-            throw new ProjectNotFoundException();
-        }
-
         return $this->json($project, context: ['groups' => 'project:read']);
     }
 
@@ -89,14 +85,9 @@ class ProjectController extends AbstractController
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
-    public function updateProject(int $id, Request $request): JsonResponse
+    #[IsGranted(ProjectVoter::EDIT, subject: 'project')]
+    public function updateProject(Project $project, Request $request): JsonResponse
     {
-        $project = $this->projectRepository->find($id);
-
-        if (!$project) {
-            throw new ProjectNotFoundException();
-        }
-
         $data = json_decode($request->getContent(), true);
 
         if (isset($data['title'])) {
@@ -113,14 +104,9 @@ class ProjectController extends AbstractController
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
-    public function deleteProject(int $id): JsonResponse
+    #[IsGranted(ProjectVoter::DELETE, subject: 'project')]
+    public function deleteProject(Project $project): JsonResponse
     {
-        $project = $this->projectRepository->find($id);
-
-        if (!$project) {
-            throw new ProjectNotFoundException();
-        }
-
         $taskCount = $this->projectRepository->countTasks($project);
         if ($taskCount > 0) {
             throw new ProjectHasTasksException();
@@ -133,14 +119,9 @@ class ProjectController extends AbstractController
     }
 
     #[Route('/{id}/tasks', name: 'get_project_tasks', methods: ['GET'])]
-    public function getProjectTasks(int $id): JsonResponse
+    #[IsGranted(ProjectVoter::VIEW_TASKS, subject: 'project')]
+    public function getProjectTasks(Project $project): JsonResponse
     {
-        $project = $this->projectRepository->find($id);
-
-        if (!$project) {
-            throw new ProjectNotFoundException();
-        }
-
         $tasks = $this->taskRepository->findBy(['project' => $project]);
 
         return $this->json($tasks, context: ['groups' => 'task:read']);
