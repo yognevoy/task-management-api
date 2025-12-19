@@ -48,4 +48,20 @@ class TaskRepository extends ServiceEntityRepository
             ->getResult()
         ;
     }
+
+    /**
+     * Find all tasks by project
+     *
+     * @return Task[]
+     */
+    public function findByProject(\App\Entity\Project $project): array
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.project = :project')
+            ->setParameter('project', $project)
+            ->orderBy('t.id', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 }

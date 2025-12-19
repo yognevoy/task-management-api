@@ -8,15 +8,15 @@ use App\Enum\TaskStatus;
 use App\Exception\AccessDeniedException;
 use App\Exception\CircularTaskReferenceException;
 use App\Exception\ParentTaskNotFoundException;
-use App\Exception\TaskNotFoundException;
-use App\Exception\UserNotFoundException;
 use App\Repository\TaskRepository;
+use App\Security\Voter\TaskVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/tasks', name: 'api_tasks_')]
 class TaskController extends AbstractController
@@ -29,17 +29,31 @@ class TaskController extends AbstractController
     #[Route('', name: 'get_all', methods: ['GET'])]
     public function getAllTasks(Request $request): JsonResponse
     {
-        $ownerId = $request->query->getInt('owner');
+        $currentUser = $this->getUser();
+        if (!$currentUser instanceof User) {
+            throw new AccessDeniedException();
+        }
 
-        if ($ownerId) {
-            $user = $this->entityManager->getRepository(User::class)->find($ownerId);
-            if (!$user) {
-                throw new UserNotFoundException();
+        if (!$currentUser->isAdmin()) {
+            $ownedTasks = $this->taskRepository->findByOwner($currentUser);
+
+            $ownedProjects = $currentUser->getProjects();
+            $projectTasks = [];
+            foreach ($ownedProjects as $project) {
+                $projectTasks = array_merge($projectTasks, $this->taskRepository->findByProject($project));
             }
 
-            $tasks = $this->taskRepository->findByOwner($user);
+            $allTasks = array_merge($ownedTasks, $projectTasks);
 
-            return $this->json($tasks, context: ['groups' => 'task:read']);
+            $taskMap = [];
+            foreach ($allTasks as $task) {
+                if (!isset($seenIds[$task->getId()])) {
+                    $taskMap[$task->getId()] = $task;
+                }
+            }
+            $uniqueTasks = array_values($taskMap);
+
+            return $this->json($uniqueTasks, context: ['groups' => 'task:read']);
         }
 
         $tasks = $this->taskRepository->findAll();
@@ -48,14 +62,9 @@ class TaskController extends AbstractController
     }
 
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
-    public function getTask(int $id): JsonResponse
+    #[IsGranted(TaskVoter::VIEW, subject: 'task')]
+    public function getTask(Task $task): JsonResponse
     {
-        $task = $this->taskRepository->find($id);
-
-        if (!$task) {
-            return $this->json(['error' => 'Task not found'], Response::HTTP_NOT_FOUND);
-        }
-
         return $this->json($task, context: ['groups' => 'task:read']);
     }
 
@@ -121,14 +130,9 @@ class TaskController extends AbstractController
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
-    public function updateTask(int $id, Request $request): JsonResponse
+    #[IsGranted(TaskVoter::EDIT, subject: 'task')]
+    public function updateTask(Task $task, Request $request): JsonResponse
     {
-        $task = $this->taskRepository->find($id);
-
-        if (!$task) {
-            return $this->json(['error' => 'Task not found'], Response::HTTP_NOT_FOUND);
-        }
-
         $data = json_decode($request->getContent(), true);
 
         if (isset($data['title'])) {
@@ -190,14 +194,9 @@ class TaskController extends AbstractController
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
-    public function deleteTask(int $id): JsonResponse
+    #[IsGranted(TaskVoter::DELETE, subject: 'task')]
+    public function deleteTask(Task $task): JsonResponse
     {
-        $task = $this->taskRepository->find($id);
-
-        if (!$task) {
-            return $this->json(['error' => 'Task not found'], Response::HTTP_NOT_FOUND);
-        }
-
         $this->entityManager->remove($task);
         $this->entityManager->flush();
 
@@ -205,15 +204,10 @@ class TaskController extends AbstractController
     }
 
     #[Route('/{id}/subtasks', name: 'get_subtasks', methods: ['GET'])]
-    public function getSubtasks(int $id): JsonResponse
+    #[IsGranted(TaskVoter::VIEW, subject: 'parentTask')]
+    public function getSubtasks(Task $task): JsonResponse
     {
-        $parentTask = $this->taskRepository->find($id);
-
-        if (!$parentTask) {
-            throw new TaskNotFoundException();
-        }
-
-        $subtasks = $this->taskRepository->findByParent($parentTask);
+        $subtasks = $this->taskRepository->findByParent($task);
 
         return $this->json($subtasks, context: ['groups' => 'task:read']);
     }
