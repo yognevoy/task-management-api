@@ -3,13 +3,13 @@
 namespace App\Controller;
 
 use App\Entity\Project;
-use App\Entity\User;
+use App\User\Domain\Entity\User;
 use App\Exception\AccessDeniedException;
 use App\Exception\ProjectHasTasksException;
-use App\Exception\UserNotFoundException;
 use App\Repository\ProjectRepository;
-use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\Security\Voter\ProjectVoter;
+use App\Task\Domain\Repository\TaskRepositoryInterface;
+use App\User\Domain\Exception\UserNotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;

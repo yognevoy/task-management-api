@@ -3,7 +3,7 @@
 namespace App\Task\Application\Controller;
 
 use App\Task\Domain\Entity\Task;
-use App\Entity\User;
+use App\User\Domain\Entity\User;
 use App\Enum\TaskStatus;
 use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Domain\Exception\CircularTaskReferenceException;

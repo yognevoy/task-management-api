@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use App\Exception\ValidationException;
-use App\Service\UserService;
+use App\User\Application\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;

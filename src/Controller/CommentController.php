@@ -4,13 +4,13 @@ namespace App\Controller;
 
 use App\Entity\Comment;
 use App\Entity\Task;
-use App\Entity\User;
+use App\User\Domain\Entity\User;
 use App\Exception\AccessDeniedException;
 use App\Exception\TaskNotFoundException;
-use App\Exception\UserNotFoundException;
 use App\Repository\CommentRepository;
 use App\Security\Voter\CommentVoter;
 use App\Security\Voter\TaskVoter;
+use App\User\Domain\Exception\UserNotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;

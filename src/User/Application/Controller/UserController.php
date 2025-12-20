@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Controller;
+namespace App\User\Application\Controller;
 
-use App\Entity\User;
 use App\Exception\ValidationException;
-use App\Repository\UserRepository;
 use App\Security\Voter\UserVoter;
-use App\Service\UserService;
+use App\User\Application\Service\UserService;
+use App\User\Domain\Entity\User;
+use App\User\Domain\Repository\UserRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,7 +19,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class UserController extends AbstractController
 {
     public function __construct(
-        private UserRepository $userRepository,
+        private UserRepositoryInterface $userRepository,
         private UserService $userService,
         private UserPasswordHasherInterface $passwordHasher
     ) {

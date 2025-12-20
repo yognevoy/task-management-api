@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Entity;
+namespace App\User\Domain\Entity;
 
+use App\Entity\Comment;
+use App\Entity\Project;
 use App\Enum\UserRole;
-use App\Repository\UserRepository;
 use App\Task\Domain\Entity\Task;
+use App\User\Infrastructure\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;

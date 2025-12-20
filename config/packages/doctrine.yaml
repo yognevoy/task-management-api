@@ -24,3 +24,9 @@ doctrine:
                         dir: '%kernel.project_dir%/src/Task/Domain/Entity'
                         prefix: 'App\Task\Domain\Entity'
                         alias: Task
+                    User:
+                        type: attribute
+                        is_bundle: false
+                        dir: '%kernel.project_dir%/src/User/Domain/Entity'
+                        prefix: 'App\User\Domain\Entity'
+                        alias: User

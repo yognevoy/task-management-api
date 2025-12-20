@@ -3,7 +3,7 @@
 namespace App\Task\Domain\Repository;
 
 use App\Task\Domain\Entity\Task;
-use App\Entity\User;
+use App\User\Domain\Entity\User;
 
 interface TaskRepositoryInterface
 {

@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Service;
+namespace App\User\Application\Service;
 
-use App\Entity\User;
 use App\Enum\UserRole;
 use App\Exception\ValidationException;
-use App\Repository\UserRepository;
+use App\User\Domain\Entity\User;
+use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -16,7 +16,7 @@ class UserService
         private UserPasswordHasherInterface $passwordEncoder,
         private EntityManagerInterface $entityManager,
         private ValidatorInterface $validator,
-        private UserRepository $userRepository
+        private UserRepositoryInterface $userRepository
     ) {
     }
 

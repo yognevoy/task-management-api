@@ -3,7 +3,7 @@
 namespace App\Task\Infrastructure\Repository;
 
 use App\Task\Domain\Entity\Task;
-use App\Entity\User;
+use App\User\Domain\Entity\User;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
