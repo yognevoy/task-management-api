@@ -6,67 +6,24 @@ use App\Entity\Comment;
 use App\Entity\Project;
 use App\User\Domain\Entity\User;
 use App\Enum\TaskStatus;
-use App\Task\Infrastructure\Repository\TaskRepository;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
-use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Attribute\Groups;
 
-#[ORM\Entity(repositoryClass: TaskRepository::class)]
-#[ORM\Table(name: 'tasks')]
 class Task
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
-    #[Groups(['task:read'])]
     private ?int $id = null;
-
-    #[ORM\Column(length: 255)]
-    #[Groups(['task:read', 'task:write'])]
     private ?string $title = null;
-
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['task:read', 'task:write'])]
     private ?string $description = null;
-
-    #[ORM\Column(type: 'string', enumType: TaskStatus::class, options: ['default' => 'todo'])]
-    #[Groups(['task:read', 'task:write'])]
     private TaskStatus $status = TaskStatus::TODO;
-
-    #[ORM\ManyToOne(inversedBy: 'tasks')]
-    #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['task:write'])]
     private User $owner;
-
-    #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'subtasks')]
-    #[ORM\JoinColumn(nullable: true)]
     private ?self $parent = null;
-
-    #[ORM\ManyToOne(targetEntity: Project::class, inversedBy: 'tasks')]
-    #[ORM\JoinColumn(nullable: true)]
-    #[Groups(['task:write'])]
     private ?Project $project = null;
-
-    /** @var Collection<int, self> */
-    #[ORM\OneToMany(mappedBy: 'parent', targetEntity: self::class, cascade: ['persist', 'remove'])]
     private Collection $subtasks;
-
-    /** @var Collection<int, Comment> */
-    #[ORM\OneToMany(mappedBy: 'task', targetEntity: Comment::class, cascade: ['persist', 'remove'])]
     private Collection $comments;
-
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    #[Groups(['task:read'])]
     private ?\DateTimeImmutable $createdAt = null;
-
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    #[Groups(['task:read'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    #[Groups(['task:read'])]
     public function getOwnerId(): ?int
     {
         return $this->owner?->getId();
@@ -96,7 +53,6 @@ class Task
     /**
      * Returns only the ID of the parent task, not the full object
      */
-    #[Groups(['task:read'])]
     public function getParentId(): ?int
     {
         return $this->parent?->getId();
@@ -145,16 +101,16 @@ class Task
         return $this->id;
     }
 
-    public function getTitle(): ?string
-    {
-        return $this->title;
-    }
-
     public function setTitle(string $title): static
     {
         $this->title = $title;
 
         return $this;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
     }
 
     public function getDescription(): ?string
@@ -217,7 +173,6 @@ class Task
         return $this;
     }
 
-    #[Groups(['task:read'])]
     public function getProjectId(): ?int
     {
         return $this->project?->getId();
@@ -253,7 +208,6 @@ class Task
         return $this;
     }
 
-    #[ORM\PreUpdate]
     public function updateTimestamps(): void
     {
         $this->updatedAt = new DateTimeImmutable();
