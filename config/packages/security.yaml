@@ -1,7 +1,7 @@
 security:
     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
-        App\Entity\User:
+        App\User\Domain\Entity\User:
             algorithm: auto
             cost: 12 # Allows to tune the algorithm
 
@@ -10,7 +10,7 @@ security:
         # used to reload user from session & other features (e.g. switch_user)
         app_user_provider:
             entity:
-                class: App\Entity\User
+                class: App\User\Domain\Entity\User
                 property: email
 
     role_hierarchy:
