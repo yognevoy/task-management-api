@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Controller;
+namespace App\Task\Application\Controller;
 
-use App\Entity\Task;
+use App\Task\Domain\Entity\Task;
 use App\Entity\User;
 use App\Enum\TaskStatus;
-use App\Exception\AccessDeniedException;
-use App\Exception\CircularTaskReferenceException;
-use App\Exception\ParentTaskNotFoundException;
-use App\Repository\TaskRepository;
+use App\Shared\Domain\Exception\AccessDeniedException;
+use App\Task\Domain\Exception\CircularTaskReferenceException;
+use App\Task\Domain\Exception\ParentTaskNotFoundException;
+use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\Security\Voter\TaskVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -22,7 +22,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class TaskController extends AbstractController
 {
     public function __construct(
-        private TaskRepository $taskRepository,
+        private TaskRepositoryInterface $taskRepository,
         private EntityManagerInterface $entityManager,
     ) {}
 

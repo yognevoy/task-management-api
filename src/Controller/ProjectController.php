@@ -8,7 +8,7 @@ use App\Exception\AccessDeniedException;
 use App\Exception\ProjectHasTasksException;
 use App\Exception\UserNotFoundException;
 use App\Repository\ProjectRepository;
-use App\Repository\TaskRepository;
+use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\Security\Voter\ProjectVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,7 +23,7 @@ class ProjectController extends AbstractController
 {
     public function __construct(
         private ProjectRepository $projectRepository,
-        private TaskRepository $taskRepository,
+        private TaskRepositoryInterface $taskRepository,
         private EntityManagerInterface $entityManager,
     ) {}
 

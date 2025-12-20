@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\ProjectRepository;
+use App\Task\Domain\Entity\Task;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;

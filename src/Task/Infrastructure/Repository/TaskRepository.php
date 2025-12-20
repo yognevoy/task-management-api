@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Repository;
+namespace App\Task\Infrastructure\Repository;
 
-use App\Entity\Task;
+use App\Task\Domain\Entity\Task;
 use App\Entity\User;
+use App\Task\Domain\Repository\TaskRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<Task>
  */
-class TaskRepository extends ServiceEntityRepository
+class TaskRepository extends ServiceEntityRepository implements TaskRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
     {

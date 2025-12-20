@@ -1,14 +1,17 @@
 <?php
 
-namespace App\Entity;
+namespace App\Task\Domain\Entity;
 
+use App\Entity\Comment;
+use App\Entity\Project;
+use App\Entity\User;
 use App\Enum\TaskStatus;
-use App\Repository\TaskRepository;
+use App\Task\Infrastructure\Repository\TaskRepository;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use DateTimeImmutable;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
