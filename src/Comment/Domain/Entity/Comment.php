@@ -2,51 +2,24 @@
 
 namespace App\Comment\Domain\Entity;
 
-use App\Comment\Infrastructure\Repository\CommentRepository;
 use App\Task\Domain\Entity\Task;
 use App\User\Domain\Entity\User;
 use DateTimeImmutable;
-use Doctrine\DBAL\Types\Types;
-use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Attribute\Groups;
 
-#[ORM\Entity(repositoryClass: CommentRepository::class)]
-#[ORM\Table(name: 'comments')]
 class Comment
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
-    #[Groups(['comment:read'])]
     private ?int $id = null;
-
-    #[ORM\Column(type: Types::TEXT)]
-    #[Groups(['comment:read', 'comment:write'])]
     private ?string $content = null;
-
-    #[ORM\ManyToOne(inversedBy: 'comments')]
-    #[ORM\JoinColumn(nullable: false)]
     private User $author;
-
-    #[ORM\ManyToOne(inversedBy: 'comments')]
-    #[ORM\JoinColumn(nullable: false)]
     private Task $task;
-
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    #[Groups(['comment:read'])]
     private ?\DateTimeImmutable $createdAt = null;
-
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    #[Groups(['comment:read'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    #[Groups(['comment:read'])]
     public function getAuthorId(): ?int
     {
         return $this->author?->getId();
     }
 
-    #[Groups(['comment:read'])]
     public function getTaskId(): ?int
     {
         return $this->task?->getId();
@@ -124,7 +97,6 @@ class Comment
         return $this;
     }
 
-    #[ORM\PreUpdate]
     public function updateTimestamps(): void
     {
         $this->updatedAt = new DateTimeImmutable();
