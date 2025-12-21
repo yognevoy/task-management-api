@@ -2,9 +2,10 @@
 
 namespace App\Task\Infrastructure\Repository;
 
+use App\Project\Domain\Entity\Project;
 use App\Task\Domain\Entity\Task;
-use App\User\Domain\Entity\User;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
+use App\User\Domain\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -55,7 +56,7 @@ class TaskRepository extends ServiceEntityRepository implements TaskRepositoryIn
      *
      * @return Task[]
      */
-    public function findByProject(\App\Entity\Project $project): array
+    public function findByProject(Project $project): array
     {
         return $this->createQueryBuilder('t')
             ->andWhere('t.project = :project')

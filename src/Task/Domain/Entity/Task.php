@@ -3,7 +3,7 @@
 namespace App\Task\Domain\Entity;
 
 use App\Entity\Comment;
-use App\Entity\Project;
+use App\Project\Domain\Entity\Project;
 use App\User\Domain\Entity\User;
 use App\Enum\TaskStatus;
 use DateTimeImmutable;

@@ -31,7 +31,7 @@
             <join-column name="parent_id" referenced-column-name="id" nullable="true"/>
         </many-to-one>
 
-        <many-to-one field="project" target-entity="App\Entity\Project" inversed-by="tasks">
+        <many-to-one field="project" target-entity="App\Project\Domain\Entity\Project" inversed-by="tasks">
             <join-column name="project_id" referenced-column-name="id" nullable="true"/>
         </many-to-one>
 

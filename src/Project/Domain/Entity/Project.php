@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Entity;
+namespace App\Project\Domain\Entity;
 
-use App\Repository\ProjectRepository;
+use App\Project\Infrastructure\Repository\ProjectRepository;
 use App\Task\Domain\Entity\Task;
 use App\User\Domain\Entity\User;
 use DateTimeImmutable;

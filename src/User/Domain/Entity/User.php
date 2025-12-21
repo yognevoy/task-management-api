@@ -3,10 +3,9 @@
 namespace App\User\Domain\Entity;
 
 use App\Entity\Comment;
-use App\Entity\Project;
 use App\Enum\UserRole;
+use App\Project\Domain\Entity\Project;
 use App\Task\Domain\Entity\Task;
-use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;

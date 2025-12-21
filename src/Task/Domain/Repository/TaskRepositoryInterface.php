@@ -2,6 +2,7 @@
 
 namespace App\Task\Domain\Repository;
 
+use App\Project\Domain\Entity\Project;
 use App\Task\Domain\Entity\Task;
 use App\User\Domain\Entity\User;
 
@@ -24,5 +25,5 @@ interface TaskRepositoryInterface
     /**
      * @return Task[]
      */
-    public function findByProject(\App\Entity\Project $project): array;
+    public function findByProject(Project $project): array;
 }

@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Controller;
+namespace App\Project\Application\Controller;
 
-use App\Entity\Project;
-use App\User\Domain\Entity\User;
-use App\Exception\AccessDeniedException;
-use App\Exception\ProjectHasTasksException;
-use App\Repository\ProjectRepository;
+use App\Project\Domain\Entity\Project;
+use App\Project\Domain\Exception\ProjectHasTasksException;
+use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Security\Voter\ProjectVoter;
+use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
+use App\User\Domain\Entity\User;
 use App\User\Domain\Exception\UserNotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -22,7 +22,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class ProjectController extends AbstractController
 {
     public function __construct(
-        private ProjectRepository $projectRepository,
+        private ProjectRepositoryInterface $projectRepository,
         private TaskRepositoryInterface $taskRepository,
         private EntityManagerInterface $entityManager,
     ) {}

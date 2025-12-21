@@ -1,16 +1,17 @@
 <?php
 
-namespace App\Repository;
+namespace App\Project\Infrastructure\Repository;
 
-use App\Entity\Project;
+use App\Project\Domain\Entity\Project;
 use App\User\Domain\Entity\User;
+use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<Project>
  */
-class ProjectRepository extends ServiceEntityRepository
+class ProjectRepository extends ServiceEntityRepository implements ProjectRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -41,7 +42,7 @@ class ProjectRepository extends ServiceEntityRepository
         $result = $this->getEntityManager()
             ->createQuery('
                 SELECT COUNT(t.id)
-                FROM App\Entity\Task t
+                FROM App\Task\Domain\Entity\Task t
                 WHERE t.project = :project
             ')
             ->setParameter('project', $project)

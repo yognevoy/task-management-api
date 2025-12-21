@@ -33,7 +33,7 @@
             </cascade>
         </one-to-many>
 
-        <one-to-many field="projects" target-entity="App\Entity\Project" mapped-by="owner">
+        <one-to-many field="projects" target-entity="App\Project\Domain\Entity\Project" mapped-by="owner">
             <cascade>
                 <cascade-persist/>
             </cascade>
