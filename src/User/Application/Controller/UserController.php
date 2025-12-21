@@ -2,8 +2,8 @@
 
 namespace App\User\Application\Controller;
 
-use App\Exception\ValidationException;
 use App\Security\Voter\UserVoter;
+use App\Shared\Domain\Exception\ValidationException;
 use App\User\Application\Service\UserService;
 use App\User\Domain\Entity\User;
 use App\User\Domain\Repository\UserRepositoryInterface;
