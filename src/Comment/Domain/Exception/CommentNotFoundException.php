@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exception;
+namespace App\Comment\Domain\Exception;
 
 use Symfony\Component\HttpKernel\Exception\HttpException;
 

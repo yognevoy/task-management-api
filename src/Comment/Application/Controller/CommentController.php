@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Controller;
+namespace App\Comment\Application\Controller;
 
-use App\Entity\Comment;
-use App\Entity\Task;
-use App\User\Domain\Entity\User;
-use App\Exception\AccessDeniedException;
-use App\Exception\TaskNotFoundException;
-use App\Repository\CommentRepository;
+use App\Comment\Domain\Entity\Comment;
+use App\Comment\Domain\Repository\CommentRepositoryInterface;
 use App\Security\Voter\CommentVoter;
 use App\Security\Voter\TaskVoter;
+use App\Shared\Domain\Exception\AccessDeniedException;
+use App\Task\Domain\Entity\Task;
+use App\Task\Domain\Exception\TaskNotFoundException;
+use App\User\Domain\Entity\User;
 use App\User\Domain\Exception\UserNotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,7 +23,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class CommentController extends AbstractController
 {
     public function __construct(
-        private CommentRepository $commentRepository,
+        private CommentRepositoryInterface $commentRepository,
         private EntityManagerInterface $entityManager,
     ) {}
 
