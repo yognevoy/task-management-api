@@ -2,7 +2,7 @@
 
 namespace App\Security\Voter;
 
-use App\Entity\Comment;
+use App\Comment\Domain\Entity\Comment;
 use App\User\Domain\Entity\User;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;

@@ -42,7 +42,7 @@
             </cascade>
         </one-to-many>
 
-        <one-to-many field="comments" target-entity="App\Entity\Comment" mapped-by="task" orphan-removal="true">
+        <one-to-many field="comments" target-entity="App\Comment\Domain\Entity\Comment" mapped-by="task" orphan-removal="true">
             <cascade>
                 <cascade-persist/>
                 <cascade-remove/>
