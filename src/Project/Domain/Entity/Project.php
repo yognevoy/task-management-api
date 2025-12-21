@@ -2,54 +2,23 @@
 
 namespace App\Project\Domain\Entity;
 
-use App\Project\Infrastructure\Repository\ProjectRepository;
 use App\Task\Domain\Entity\Task;
 use App\User\Domain\Entity\User;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
-use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Attribute\Groups;
-use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity(repositoryClass: ProjectRepository::class)]
-#[ORM\Table(name: 'projects')]
 class Project
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
-    #[Groups(['project:read'])]
     private ?int $id = null;
-
-    #[ORM\Column(length: 255)]
-    #[Assert\NotBlank]
-    #[Groups(['project:read', 'project:write'])]
     private ?string $title = null;
-
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['project:read', 'project:write'])]
     private ?string $description = null;
-
-    #[ORM\ManyToOne(inversedBy: 'projects')]
-    #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['project:write'])]
     private User $owner;
-
     /** @var Collection<int, Task> */
-    #[ORM\OneToMany(mappedBy: 'project', targetEntity: Task::class, cascade: ['persist', 'remove'])]
     private Collection $tasks;
-
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    #[Groups(['project:read'])]
     private ?\DateTimeImmutable $createdAt = null;
-
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    #[Groups(['project:read'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    #[Groups(['project:read'])]
     public function getOwnerId(): ?int
     {
         return $this->owner?->getId();
@@ -158,7 +127,6 @@ class Project
         return $this;
     }
 
-    #[ORM\PreUpdate]
     public function updateTimestamps(): void
     {
         $this->updatedAt = new DateTimeImmutable();
