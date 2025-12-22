@@ -9,7 +9,7 @@ use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Domain\Exception\CircularTaskReferenceException;
 use App\Task\Domain\Exception\ParentTaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
-use App\Security\Voter\TaskVoter;
+use App\Task\Application\Security\Voter\TaskVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;

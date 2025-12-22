@@ -4,8 +4,8 @@ namespace App\Comment\Application\Controller;
 
 use App\Comment\Domain\Entity\Comment;
 use App\Comment\Domain\Repository\CommentRepositoryInterface;
-use App\Security\Voter\CommentVoter;
-use App\Security\Voter\TaskVoter;
+use App\Comment\Application\Security\Voter\CommentVoter;
+use App\Task\Application\Security\Voter\TaskVoter;
 use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Domain\Entity\Task;
 use App\Task\Domain\Exception\TaskNotFoundException;

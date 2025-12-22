@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Security\Voter;
+namespace App\Task\Application\Security\Voter;
 
-use App\Entity\Task;
+use App\Task\Domain\Entity\Task;
 use App\User\Domain\Entity\User;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
