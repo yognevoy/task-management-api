@@ -6,6 +6,7 @@ use App\Comment\Domain\Entity\Comment;
 use App\Project\Domain\Entity\Project;
 use App\User\Domain\Entity\User;
 use App\Task\Domain\Enum\TaskStatus;
+use App\Task\Domain\Enum\TaskType;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -16,6 +17,7 @@ class Task
     private ?string $title = null;
     private ?string $description = null;
     private TaskStatus $status = TaskStatus::TODO;
+    private TaskType $type = TaskType::TASK;
     private User $owner;
     private ?self $parent = null;
     private ?Project $project = null;
@@ -204,6 +206,18 @@ class Task
                 $comment->setTask(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getType(): TaskType
+    {
+        return $this->type;
+    }
+
+    public function setType(TaskType $type): static
+    {
+        $this->type = $type;
 
         return $this;
     }
