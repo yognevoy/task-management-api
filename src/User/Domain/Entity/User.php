@@ -3,7 +3,7 @@
 namespace App\User\Domain\Entity;
 
 use App\Comment\Domain\Entity\Comment;
-use App\Enum\UserRole;
+use App\User\Domain\Enum\UserRole;
 use App\Project\Domain\Entity\Project;
 use App\Task\Domain\Entity\Task;
 use Doctrine\Common\Collections\ArrayCollection;

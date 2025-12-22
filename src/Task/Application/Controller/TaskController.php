@@ -4,7 +4,7 @@ namespace App\Task\Application\Controller;
 
 use App\Task\Domain\Entity\Task;
 use App\User\Domain\Entity\User;
-use App\Enum\TaskStatus;
+use App\Task\Domain\Enum\TaskStatus;
 use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Domain\Exception\CircularTaskReferenceException;
 use App\Task\Domain\Exception\ParentTaskNotFoundException;

@@ -17,7 +17,7 @@
 
         <field name="description" type="text" nullable="true"/>
 
-        <field name="status" type="string" enum-type="App\Enum\TaskStatus">
+        <field name="status" type="string" enum-type="App\Task\Domain\Enum\TaskStatus">
             <options>
                 <option name="default">todo</option>
             </options>

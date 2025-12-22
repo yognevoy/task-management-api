@@ -5,7 +5,7 @@ namespace App\Task\Domain\Entity;
 use App\Comment\Domain\Entity\Comment;
 use App\Project\Domain\Entity\Project;
 use App\User\Domain\Entity\User;
-use App\Enum\TaskStatus;
+use App\Task\Domain\Enum\TaskStatus;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;

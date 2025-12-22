@@ -2,7 +2,7 @@
 
 namespace App\User\Application\Service;
 
-use App\Enum\UserRole;
+use App\User\Domain\Enum\UserRole;
 use App\Shared\Domain\Exception\ValidationException;
 use App\User\Domain\Entity\User;
 use App\User\Domain\Repository\UserRepositoryInterface;
