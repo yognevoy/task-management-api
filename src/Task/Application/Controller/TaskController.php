@@ -7,6 +7,7 @@ use App\Task\Application\Security\Voter\TaskVoter;
 use App\Task\Domain\Entity\Task;
 use App\Task\Domain\Enum\TaskStatus;
 use App\Task\Domain\Enum\TaskType;
+use App\Task\Domain\Enum\TaskPriority;
 use App\Task\Domain\Exception\CircularTaskReferenceException;
 use App\Task\Domain\Exception\ParentTaskNotFoundException;
 use App\Task\Domain\Exception\TaskNotFoundException;
@@ -104,6 +105,15 @@ class TaskController extends AbstractController
             }
         }
 
+        if (!empty($data['priority'])) {
+            try {
+                $priority = TaskPriority::from($data['priority']);
+                $task->setPriority($priority);
+            } catch (\ValueError $e) {
+                return $this->json(['error' => 'Invalid priority value'], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
         if (!empty($data['parentId'])) {
             $parentTask = $this->taskRepository->find($data['parentId']);
 
@@ -179,6 +189,15 @@ class TaskController extends AbstractController
                 $task->setType($type);
             } catch (\ValueError $e) {
                 return $this->json(['error' => 'Invalid type value'], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
+        if (!empty($data['priority'])) {
+            try {
+                $priority = TaskPriority::from($data['priority']);
+                $task->setPriority($priority);
+            } catch (\ValueError $e) {
+                return $this->json(['error' => 'Invalid priority value'], Response::HTTP_BAD_REQUEST);
             }
         }
 

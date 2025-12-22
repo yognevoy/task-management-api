@@ -7,6 +7,7 @@ use App\Project\Domain\Entity\Project;
 use App\User\Domain\Entity\User;
 use App\Task\Domain\Enum\TaskStatus;
 use App\Task\Domain\Enum\TaskType;
+use App\Task\Domain\Enum\TaskPriority;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -18,6 +19,7 @@ class Task
     private ?string $description = null;
     private TaskStatus $status = TaskStatus::TODO;
     private TaskType $type = TaskType::TASK;
+    private TaskPriority $priority = TaskPriority::LOW;
     private User $owner;
     private ?self $parent = null;
     private ?Project $project = null;
@@ -218,6 +220,18 @@ class Task
     public function setType(TaskType $type): static
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    public function getPriority(): TaskPriority
+    {
+        return $this->priority;
+    }
+
+    public function setPriority(TaskPriority $priority): static
+    {
+        $this->priority = $priority;
 
         return $this;
     }

@@ -10,6 +10,8 @@ App\Task\Domain\Entity\Task:
             groups: ['task:read', 'task:write']
         type:
             groups: ['task:read', 'task:write']
+        priority:
+            groups: ['task:read', 'task:write']
         ownerId:
             groups: ['task:read']
         parentId:

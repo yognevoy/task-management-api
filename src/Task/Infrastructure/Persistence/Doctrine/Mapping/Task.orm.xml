@@ -29,6 +29,12 @@
             </options>
         </field>
 
+        <field name="priority" type="string" enum-type="App\Task\Domain\Enum\TaskPriority">
+            <options>
+                <option name="default">low</option>
+            </options>
+        </field>
+
         <many-to-one field="owner" target-entity="App\User\Domain\Entity\User" inversed-by="tasks">
             <join-column name="owner_id" referenced-column-name="id" nullable="false"/>
         </many-to-one>
