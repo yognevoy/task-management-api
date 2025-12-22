@@ -30,6 +30,7 @@ class TaskController extends AbstractController
     public function getAllTasks(Request $request): JsonResponse
     {
         $currentUser = $this->getUser();
+
         if (!$currentUser instanceof User) {
             throw new AccessDeniedException();
         }
@@ -95,6 +96,7 @@ class TaskController extends AbstractController
 
         if (!empty($data['parentId'])) {
             $parentTask = $this->taskRepository->find($data['parentId']);
+
             if (!$parentTask) {
                 throw new ParentTaskNotFoundException();
             }
@@ -107,8 +109,9 @@ class TaskController extends AbstractController
                 return $this->json(['error' => 'Project not found'], Response::HTTP_BAD_REQUEST);
             }
 
-            // Check if the user owns the project
             $currentUser = $this->getUser();
+
+            // Check if the user owns the project
             if (!$currentUser instanceof User || $currentUser->getId() !== $project->getOwner()->getId()) {
                 throw new AccessDeniedException();
             }
@@ -117,6 +120,7 @@ class TaskController extends AbstractController
         }
 
         $currentUser = $this->getUser();
+
         if (!$currentUser instanceof User) {
             throw new AccessDeniedException();
         }
@@ -164,6 +168,7 @@ class TaskController extends AbstractController
                 $task->setParent(null);
             } else {
                 $parentTask = $this->taskRepository->find($data['parentId']);
+
                 if (!$parentTask) {
                     throw new ParentTaskNotFoundException();
                 }
@@ -181,12 +186,14 @@ class TaskController extends AbstractController
                 $task->setProject(null);
             } else {
                 $project = $this->entityManager->getRepository(\App\Entity\Project::class)->find($data['projectId']);
+
                 if (!$project) {
                     return $this->json(['error' => 'Project not found'], Response::HTTP_BAD_REQUEST);
                 }
 
-                // Check if the user owns the project
                 $currentUser = $this->getUser();
+
+                // Check if the user owns the project
                 if (!$currentUser instanceof User || $currentUser->getId() !== $project->getOwner()->getId()) {
                     throw new AccessDeniedException();
                 }
