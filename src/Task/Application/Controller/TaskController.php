@@ -2,21 +2,21 @@
 
 namespace App\Task\Application\Controller;
 
-use App\Task\Domain\Entity\Task;
-use App\User\Domain\Entity\User;
-use App\Task\Domain\Enum\TaskStatus;
 use App\Shared\Domain\Exception\AccessDeniedException;
+use App\Task\Application\Security\Voter\TaskVoter;
+use App\Task\Domain\Entity\Task;
+use App\Task\Domain\Enum\TaskStatus;
 use App\Task\Domain\Exception\CircularTaskReferenceException;
 use App\Task\Domain\Exception\ParentTaskNotFoundException;
+use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
-use App\Task\Application\Security\Voter\TaskVoter;
+use App\User\Domain\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/tasks', name: 'api_tasks_')]
 class TaskController extends AbstractController
@@ -55,9 +55,16 @@ class TaskController extends AbstractController
     }
 
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
-    #[IsGranted(TaskVoter::VIEW, subject: 'task')]
-    public function getTask(Task $task): JsonResponse
+    public function getTask(int $id): JsonResponse
     {
+        $task = $this->taskRepository->find($id);
+
+        if (!$task) {
+            throw new TaskNotFoundException();
+        }
+
+        $this->denyAccessUnlessGranted(TaskVoter::VIEW, $task);
+
         return $this->json($task, context: ['groups' => 'task:read']);
     }
 
@@ -123,9 +130,16 @@ class TaskController extends AbstractController
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
-    #[IsGranted(TaskVoter::EDIT, subject: 'task')]
-    public function updateTask(Task $task, Request $request): JsonResponse
+    public function updateTask(int $id, Request $request): JsonResponse
     {
+        $task = $this->taskRepository->find($id);
+
+        if (!$task) {
+            throw new TaskNotFoundException();
+        }
+
+        $this->denyAccessUnlessGranted(TaskVoter::EDIT, $task);
+
         $data = json_decode($request->getContent(), true);
 
         if (isset($data['title'])) {
@@ -187,9 +201,16 @@ class TaskController extends AbstractController
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
-    #[IsGranted(TaskVoter::DELETE, subject: 'task')]
-    public function deleteTask(Task $task): JsonResponse
+    public function deleteTask(int $id): JsonResponse
     {
+        $task = $this->taskRepository->find($id);
+
+        if (!$task) {
+            throw new TaskNotFoundException();
+        }
+
+        $this->denyAccessUnlessGranted(TaskVoter::DELETE, $task);
+
         $this->entityManager->remove($task);
         $this->entityManager->flush();
 
@@ -197,9 +218,16 @@ class TaskController extends AbstractController
     }
 
     #[Route('/{id}/subtasks', name: 'get_subtasks', methods: ['GET'])]
-    #[IsGranted(TaskVoter::VIEW, subject: 'parentTask')]
-    public function getSubtasks(Task $task): JsonResponse
+    public function getSubtasks(int $id): JsonResponse
     {
+        $task = $this->taskRepository->find($id);
+
+        if (!$task) {
+            throw new TaskNotFoundException();
+        }
+
+        $this->denyAccessUnlessGranted(TaskVoter::VIEW, $task);
+
         $subtasks = $this->taskRepository->findByParent($task);
 
         return $this->json($subtasks, context: ['groups' => 'task:read']);
