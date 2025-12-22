@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Controller;
+namespace App\User\Application\Controller;
 
-use App\Exception\ValidationException;
+use App\Shared\Domain\Exception\ValidationException;
 use App\User\Application\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
