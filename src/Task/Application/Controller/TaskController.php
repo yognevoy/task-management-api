@@ -114,6 +114,15 @@ class TaskController extends AbstractController
             }
         }
 
+        if (isset($data['dueDate'])) {
+            try {
+                $dueDate = new \DateTimeImmutable($data['dueDate']);
+                $task->setDueDate($dueDate);
+            } catch (\Exception $e) {
+                return $this->json(['error' => 'Invalid due date format'], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
         if (!empty($data['parentId'])) {
             $parentTask = $this->taskRepository->find($data['parentId']);
 
@@ -198,6 +207,19 @@ class TaskController extends AbstractController
                 $task->setPriority($priority);
             } catch (\ValueError $e) {
                 return $this->json(['error' => 'Invalid priority value'], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
+        if (array_key_exists('dueDate', $data)) {
+            if ($data['dueDate'] === null || $data['dueDate'] === '') {
+                $task->setDueDate(null);
+            } else {
+                try {
+                    $dueDate = new \DateTimeImmutable($data['dueDate']);
+                    $task->setDueDate($dueDate);
+                } catch (\Exception $e) {
+                    return $this->json(['error' => 'Invalid due date format'], Response::HTTP_BAD_REQUEST);
+                }
             }
         }
 

@@ -22,3 +22,5 @@ App\Task\Domain\Entity\Task:
             groups: ['task:read']
         updatedAt:
             groups: ['task:read']
+        dueDate:
+            groups: ['task:read', 'task:write']
