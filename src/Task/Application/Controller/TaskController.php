@@ -13,6 +13,7 @@ use App\Task\Domain\Exception\ParentTaskNotFoundException;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\User\Domain\Entity\User;
+use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -25,6 +26,7 @@ class TaskController extends AbstractController
 {
     public function __construct(
         private TaskRepositoryInterface $taskRepository,
+        private UserRepositoryInterface $userRepository,
         private EntityManagerInterface $entityManager,
     ) {}
 
@@ -148,6 +150,16 @@ class TaskController extends AbstractController
             $task->setProject($project);
         }
 
+        if (!empty($data['assigneeId'])) {
+            $assignee = $this->userRepository->find($data['assigneeId']);
+
+            if (!$assignee) {
+                return $this->json(['error' => 'Assignee not found'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $task->setAssignee($assignee);
+        }
+
         $currentUser = $this->getUser();
 
         if (!$currentUser instanceof User) {
@@ -259,6 +271,20 @@ class TaskController extends AbstractController
                 }
 
                 $task->setProject($project);
+            }
+        }
+
+        if (array_key_exists('assigneeId', $data)) {
+            if ($data['assigneeId'] === null || $data['assigneeId'] === 0) {
+                $task->setAssignee(null);
+            } else {
+                $assignee = $this->userRepository->find($data['assigneeId']);
+
+                if (!$assignee) {
+                    return $this->json(['error' => 'Assignee not found'], Response::HTTP_BAD_REQUEST);
+                }
+
+                $task->setAssignee($assignee);
             }
         }
 

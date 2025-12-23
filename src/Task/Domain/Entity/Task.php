@@ -21,6 +21,7 @@ class Task
     private TaskType $type = TaskType::TASK;
     private TaskPriority $priority = TaskPriority::LOW;
     private User $owner;
+    private ?User $assignee = null;
     private ?self $parent = null;
     private ?Project $project = null;
     private Collection $subtasks;
@@ -99,6 +100,23 @@ class Task
         $this->owner = $owner;
 
         return $this;
+    }
+
+    public function getAssignee(): ?User
+    {
+        return $this->assignee;
+    }
+
+    public function setAssignee(?User $assignee): static
+    {
+        $this->assignee = $assignee;
+
+        return $this;
+    }
+
+    public function getAssigneeId(): ?int
+    {
+        return $this->assignee?->getId();
     }
 
     public function getId(): ?int
