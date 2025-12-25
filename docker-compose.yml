@@ -39,9 +39,11 @@ services:
 
   redis:
     build:
-      context: .
-      dockerfile: docker/redis/Dockerfile
+      context: ./docker/redis
+      dockerfile: Dockerfile
     restart: always
+    environment:
+       REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - "${REDIS_PORT}:6379"
     volumes:
