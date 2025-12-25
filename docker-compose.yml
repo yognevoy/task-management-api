@@ -37,5 +37,16 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  redis:
+    build:
+      context: .
+      dockerfile: docker/redis/Dockerfile
+    restart: always
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+
 volumes:
   mysql_data:
+  redis_data:
