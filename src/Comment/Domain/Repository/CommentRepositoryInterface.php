@@ -8,8 +8,14 @@ use App\User\Domain\Entity\User;
 
 interface CommentRepositoryInterface
 {
+    /**
+     * @return Comment|null
+     */
     public function find($id, $lockMode = null, $lockVersion = null);
 
+    /**
+     * @return Comment[]
+     */
     public function findAll();
 
     /**

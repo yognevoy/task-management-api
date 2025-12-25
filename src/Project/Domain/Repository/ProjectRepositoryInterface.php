@@ -7,8 +7,14 @@ use App\User\Domain\Entity\User;
 
 interface ProjectRepositoryInterface
 {
+    /**
+     * @return Project|null
+     */
     public function find($id, $lockMode = null, $lockVersion = null);
 
+    /**
+     * @return Project[]
+     */
     public function findAll();
 
     /**

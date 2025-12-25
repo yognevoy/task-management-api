@@ -8,8 +8,14 @@ use App\User\Domain\Entity\User;
 
 interface TaskRepositoryInterface
 {
+    /**
+     * @return Task|null
+     */
     public function find($id, $lockMode = null, $lockVersion = null);
 
+    /**
+     * @return Task[]
+     */
     public function findAll();
 
     /**
