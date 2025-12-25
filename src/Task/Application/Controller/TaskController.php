@@ -2,12 +2,13 @@
 
 namespace App\Task\Application\Controller;
 
+use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Application\Security\Voter\TaskVoter;
 use App\Task\Domain\Entity\Task;
+use App\Task\Domain\Enum\TaskPriority;
 use App\Task\Domain\Enum\TaskStatus;
 use App\Task\Domain\Enum\TaskType;
-use App\Task\Domain\Enum\TaskPriority;
 use App\Task\Domain\Exception\CircularTaskReferenceException;
 use App\Task\Domain\Exception\ParentTaskNotFoundException;
 use App\Task\Domain\Exception\TaskNotFoundException;
@@ -20,6 +21,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Cache\CacheInterface;
 
 #[Route('/api/tasks', name: 'api_tasks_')]
 class TaskController extends AbstractController
@@ -27,7 +29,9 @@ class TaskController extends AbstractController
     public function __construct(
         private TaskRepositoryInterface $taskRepository,
         private UserRepositoryInterface $userRepository,
+        private ProjectRepositoryInterface $projectRepository,
         private EntityManagerInterface $entityManager,
+        private CacheInterface $taskCache,
     ) {}
 
     #[Route('', name: 'get_all', methods: ['GET'])]
@@ -39,22 +43,27 @@ class TaskController extends AbstractController
             throw new AccessDeniedException();
         }
 
-        if (!$currentUser->isAdmin()) {
-            $qb = $this->entityManager->createQueryBuilder();
-            $tasks = $qb
-                ->select('t')
-                ->from(Task::class, 't')
-                ->leftJoin('t.project', 'p')
-                ->where('t.owner = :user OR p.owner = :user')
-                ->setParameter('user', $currentUser)
-                ->orderBy('t.id', 'ASC')
-                ->getQuery()
-                ->getResult();
-
-            return $this->json($tasks, context: ['groups' => 'task:read']);
+        $cacheKey = 'tasks_user_' . $currentUser->getId();
+        if ($currentUser->isAdmin()) {
+            $cacheKey = 'tasks_all';
         }
 
-        $tasks = $this->taskRepository->findAll();
+        $tasks = $this->taskCache->get($cacheKey, function () use ($currentUser) {
+            if (!$currentUser->isAdmin()) {
+                $qb = $this->entityManager->createQueryBuilder();
+                return $qb
+                    ->select('t')
+                    ->from(Task::class, 't')
+                    ->leftJoin('t.project', 'p')
+                    ->where('t.owner = :user OR p.owner = :user')
+                    ->setParameter('user', $currentUser)
+                    ->orderBy('t.id', 'ASC')
+                    ->getQuery()
+                    ->getResult();
+            }
+
+            return $this->taskRepository->findAll();
+        });
 
         return $this->json($tasks, context: ['groups' => 'task:read']);
     }
@@ -62,11 +71,18 @@ class TaskController extends AbstractController
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
     public function getTask(int $id): JsonResponse
     {
-        $task = $this->taskRepository->find($id);
+        $cacheKey = 'task_' . $id;
 
-        if (!$task) {
-            throw new TaskNotFoundException();
-        }
+        $task = $this->taskCache->get($cacheKey, function () use ($id) {
+            // TODO: cache DTO
+            $task = $this->taskRepository->find($id);
+
+            if (!$task) {
+                throw new TaskNotFoundException();
+            }
+
+            return $task;
+        });
 
         $this->denyAccessUnlessGranted(TaskVoter::VIEW, $task);
 
@@ -135,7 +151,7 @@ class TaskController extends AbstractController
         }
 
         if (!empty($data['projectId'])) {
-            $project = $this->entityManager->getRepository(\App\Entity\Project::class)->find($data['projectId']);
+            $project = $this->projectRepository->find($data['projectId']);
             if (!$project) {
                 return $this->json(['error' => 'Project not found'], Response::HTTP_BAD_REQUEST);
             }
@@ -170,6 +186,10 @@ class TaskController extends AbstractController
 
         $this->entityManager->persist($task);
         $this->entityManager->flush();
+
+        // Invalidate cache
+        $this->taskCache->delete('tasks_user_' . $currentUser->getId());
+        $this->taskCache->delete('tasks_all');
 
         return $this->json($task, Response::HTTP_CREATED, context: ['groups' => 'task:read']);
     }
@@ -257,7 +277,7 @@ class TaskController extends AbstractController
             if ($data['projectId'] === null || $data['projectId'] === 0) {
                 $task->setProject(null);
             } else {
-                $project = $this->entityManager->getRepository(\App\Entity\Project::class)->find($data['projectId']);
+                $project = $this->projectRepository->find($data['projectId']);
 
                 if (!$project) {
                     return $this->json(['error' => 'Project not found'], Response::HTTP_BAD_REQUEST);
@@ -290,6 +310,14 @@ class TaskController extends AbstractController
 
         $this->entityManager->flush();
 
+        // Invalidate cache
+        $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
+        if ($task->getAssignee()) {
+            $this->taskCache->delete('tasks_user_' . $task->getAssigneeId());
+        }
+        $this->taskCache->delete('tasks_all');
+        $this->taskCache->delete('task_' . $task->getId());
+
         return $this->json($task, context: ['groups' => 'task:read']);
     }
 
@@ -306,6 +334,14 @@ class TaskController extends AbstractController
 
         $this->entityManager->remove($task);
         $this->entityManager->flush();
+
+        // Invalidate cache
+        $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
+        if ($task->getAssignee()) {
+            $this->taskCache->delete('tasks_user_' . $task->getAssigneeId());
+        }
+        $this->taskCache->delete('tasks_all');
+        $this->taskCache->delete('task_' . $task->getId());
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
