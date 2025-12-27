@@ -39,7 +39,6 @@ class ProjectService
      * @param CreateProjectRequest $dto
      * @param User|null $currentUser
      * @return ProjectResponse
-     * @throws \App\Shared\Domain\Exception\ValidationException
      * @throws \Psr\Cache\InvalidArgumentException
      */
     public function createProject(CreateProjectRequest $dto, ?User $currentUser = null): ProjectResponse
@@ -72,7 +71,6 @@ class ProjectService
      * @param UpdateProjectRequest $dto
      * @param User|null $currentUser
      * @return ProjectResponse
-     * @throws \App\Shared\Domain\Exception\ValidationException
      * @throws \Psr\Cache\InvalidArgumentException
      */
     public function updateProject(int $id, UpdateProjectRequest $dto, ?User $currentUser = null): ProjectResponse

@@ -10,7 +10,6 @@ use App\Comment\Domain\Entity\Comment;
 use App\Comment\Domain\Exception\CommentNotFoundException;
 use App\Comment\Domain\Repository\CommentRepositoryInterface;
 use App\Shared\Domain\Exception\AccessDeniedException;
-use App\Shared\Domain\Exception\ValidationException;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\User\Domain\Entity\User;
@@ -39,7 +38,6 @@ class CommentService
      * @param CreateCommentRequest $dto
      * @param User|null $currentUser
      * @return CommentResponse
-     * @throws ValidationException
      */
     public function createComment(CreateCommentRequest $dto, ?User $currentUser = null): CommentResponse
     {
@@ -72,7 +70,6 @@ class CommentService
      * @param UpdateCommentRequest $dto
      * @param User|null $currentUser
      * @return CommentResponse
-     * @throws ValidationException
      */
     public function updateComment(int $id, UpdateCommentRequest $dto, ?User $currentUser = null): CommentResponse
     {

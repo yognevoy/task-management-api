@@ -2,14 +2,10 @@
 
 namespace App\User\Application\Controller;
 
-use App\User\Infrastructure\Security\Voter\UserVoter;
-use App\Shared\Domain\Exception\ValidationException;
 use App\User\Application\DTO\UpdateUserRequest;
-use App\User\Application\DTO\UserListResponse;
-use App\User\Application\DTO\UserResponse;
 use App\User\Application\Service\UserService;
 use App\User\Domain\Entity\User;
-use App\User\Domain\Repository\UserRepositoryInterface;
+use App\User\Infrastructure\Security\Voter\UserVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -69,11 +65,6 @@ class UserController extends AbstractController
                 $this->userService->updateUser($id, $dto),
                 Response::HTTP_OK
             );
-        } catch (ValidationException $e) {
-            return $this->json([
-                'error' => $e->getMessage(),
-                'details' => $e->getErrors(),
-            ], Response::HTTP_BAD_REQUEST);
         } catch (\Exception $e) {
             return $this->json(['error' => 'Update failed'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

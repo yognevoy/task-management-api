@@ -74,7 +74,6 @@ class CommentController extends AbstractController
      *
      * @param CreateCommentRequest $dto
      * @return JsonResponse
-     * @throws \App\Shared\Domain\Exception\ValidationException
      */
     #[Route('', name: 'create', methods: ['POST'])]
     public function createComment(#[MapRequestPayload] CreateCommentRequest $dto): JsonResponse
@@ -93,7 +92,6 @@ class CommentController extends AbstractController
      * @param int $id
      * @param UpdateCommentRequest $dto
      * @return JsonResponse
-     * @throws \App\Shared\Domain\Exception\ValidationException
      */
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
     public function updateComment(int $id, #[MapRequestPayload] UpdateCommentRequest $dto): JsonResponse

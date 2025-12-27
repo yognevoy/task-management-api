@@ -2,7 +2,6 @@
 
 namespace App\User\Application\Controller;
 
-use App\Shared\Domain\Exception\ValidationException;
 use App\User\Application\DTO\CreateUserRequest;
 use App\User\Application\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -36,11 +35,6 @@ class AuthController extends AbstractController
                 'message' => 'User registered successfully',
                 'user_id' => $userId
             ], Response::HTTP_CREATED);
-        } catch (ValidationException $e) {
-            return $this->json([
-                'error' => $e->getMessage(),
-                'details' => $e->getErrors(),
-            ], Response::HTTP_BAD_REQUEST);
         } catch (\Exception $e) {
             return $this->json([
                 'error' => 'Registration failed: ' . $e->getMessage(),

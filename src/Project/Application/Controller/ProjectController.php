@@ -69,7 +69,6 @@ class ProjectController extends AbstractController
      *
      * @param CreateProjectRequest $dto
      * @return JsonResponse
-     * @throws \App\Shared\Domain\Exception\ValidationException
      */
     #[Route('', name: 'create', methods: ['POST'])]
     public function createProject(#[MapRequestPayload] CreateProjectRequest $dto): JsonResponse
@@ -88,7 +87,6 @@ class ProjectController extends AbstractController
      * @param int $id
      * @param UpdateProjectRequest $dto
      * @return JsonResponse
-     * @throws \App\Shared\Domain\Exception\ValidationException
      */
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
     public function updateProject(int $id, #[MapRequestPayload] UpdateProjectRequest $dto): JsonResponse

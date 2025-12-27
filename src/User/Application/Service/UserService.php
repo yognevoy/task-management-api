@@ -2,7 +2,6 @@
 
 namespace App\User\Application\Service;
 
-use App\Shared\Domain\Exception\ValidationException;
 use App\User\Application\DTO\CreateUserRequest;
 use App\User\Application\DTO\UpdateUserRequest;
 use App\User\Application\DTO\UserListResponse;
@@ -32,7 +31,6 @@ class UserService
      *
      * @param CreateUserRequest $dto
      * @return int
-     * @throws ValidationException
      */
     public function registerUser(CreateUserRequest $dto): int
     {
@@ -55,7 +53,6 @@ class UserService
      * @param int $id
      * @param UpdateUserRequest $dto
      * @return UserResponse
-     * @throws ValidationException
      */
     public function updateUser(int $id, UpdateUserRequest $dto): UserResponse
     {
