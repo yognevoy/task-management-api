@@ -14,6 +14,7 @@ use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Cache\CacheInterface;
 
 class UserService
 {
@@ -21,7 +22,8 @@ class UserService
         private UserPasswordHasherInterface $passwordEncoder,
         private EntityManagerInterface $entityManager,
         private ValidatorInterface $validator,
-        private UserRepositoryInterface $userRepository
+        private UserRepositoryInterface $userRepository,
+        private CacheInterface $userCache,
     ) {
     }
 
@@ -43,6 +45,8 @@ class UserService
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
+
+        $this->invalidateCache($user);
 
         return $user->getId();
     }
@@ -78,6 +82,8 @@ class UserService
 
         $this->entityManager->flush();
 
+        $this->invalidateCache($user);
+
         return UserResponse::fromEntity($user);
     }
 
@@ -85,22 +91,38 @@ class UserService
     {
         $this->entityManager->remove($user);
         $this->entityManager->flush();
+
+        $this->invalidateCache($user);
     }
 
     public function getAllUsers(): UserListResponse
     {
-        $users = $this->userRepository->findAll();
+        $cacheKey = 'users_all';
 
-        return new UserListResponse($users);
+        return $this->userCache->get($cacheKey, function () {
+            $users = $this->userRepository->findAll();
+
+            return new UserListResponse($users);
+        });
+    }
+
+    private function invalidateCache(User $user): void
+    {
+        $this->userCache->delete('user_' . $user->getId());
+        $this->userCache->delete('users_all');
     }
 
     public function getUserById(int $id): UserResponse
     {
-        $user = $this->userRepository->find($id);
-        if (!$user) {
-            throw new UserNotFoundException();
-        }
+        $cacheKey = 'user_' . $id;
 
-        return UserResponse::fromEntity($user);
+        return $this->userCache->get($cacheKey, function () use ($id) {
+            $user = $this->userRepository->find($id);
+            if (!$user) {
+                throw new UserNotFoundException();
+            }
+
+            return UserResponse::fromEntity($user);
+        });
     }
 }
