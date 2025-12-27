@@ -256,15 +256,19 @@ class TaskService
 
     public function getSubtasks(int $id): TaskListResponse
     {
-        $task = $this->taskRepository->find($id);
+        $cacheKey = 'subtasks_' . $id;
 
-        if (!$task) {
-            throw new TaskNotFoundException();
-        }
+        return $this->taskCache->get($cacheKey, function () use ($id) {
+            $task = $this->taskRepository->find($id);
 
-        $subtasks = $this->taskRepository->findByParent($task);
+            if (!$task) {
+                throw new TaskNotFoundException();
+            }
 
-        return new TaskListResponse($subtasks);
+            $subtasks = $this->taskRepository->findByParent($task);
+
+            return new TaskListResponse($subtasks);
+        });
     }
 
     private function invalidateCache(Task $task): void
@@ -275,5 +279,10 @@ class TaskService
         }
         $this->taskCache->delete('tasks_all');
         $this->taskCache->delete('task_' . $task->getId());
+        $this->taskCache->delete('subtasks_' . $task->getId());
+
+        if ($task->getParentId()) {
+            $this->taskCache->delete('subtasks_' . $task->getParentId());
+        }
     }
 }
