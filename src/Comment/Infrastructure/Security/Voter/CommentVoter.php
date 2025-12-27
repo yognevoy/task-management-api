@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Comment\Application\Security\Voter;
+namespace App\Comment\Infrastructure\Security\Voter;
 
 use App\Comment\Domain\Entity\Comment;
 use App\User\Domain\Entity\User;

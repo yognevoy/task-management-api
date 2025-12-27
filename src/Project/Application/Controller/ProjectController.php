@@ -5,7 +5,7 @@ namespace App\Project\Application\Controller;
 use App\Project\Domain\Entity\Project;
 use App\Project\Domain\Exception\ProjectHasTasksException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
-use App\Project\Application\Security\Voter\ProjectVoter;
+use App\Project\Infrastructure\Security\Voter\ProjectVoter;
 use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\User\Domain\Entity\User;

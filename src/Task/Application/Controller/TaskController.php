@@ -4,7 +4,7 @@ namespace App\Task\Application\Controller;
 
 use App\Task\Application\DTO\CreateTaskRequest;
 use App\Task\Application\DTO\UpdateTaskRequest;
-use App\Task\Application\Security\Voter\TaskVoter;
+use App\Task\Infrastructure\Security\Voter\TaskVoter;
 use App\Task\Application\Service\TaskService;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
