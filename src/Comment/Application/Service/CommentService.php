@@ -33,6 +33,14 @@ class CommentService
     ) {
     }
 
+    /**
+     * Creates a new comment.
+     *
+     * @param CreateCommentRequest $dto
+     * @param User|null $currentUser
+     * @return CommentResponse
+     * @throws ValidationException
+     */
     public function createComment(CreateCommentRequest $dto, ?User $currentUser = null): CommentResponse
     {
         if (!$currentUser instanceof User) {
@@ -66,6 +74,15 @@ class CommentService
         return CommentResponse::fromEntity($comment);
     }
 
+    /**
+     * Updates an existing comment.
+     *
+     * @param int $id
+     * @param UpdateCommentRequest $dto
+     * @param User|null $currentUser
+     * @return CommentResponse
+     * @throws ValidationException
+     */
     public function updateComment(int $id, UpdateCommentRequest $dto, ?User $currentUser = null): CommentResponse
     {
         $comment = $this->commentRepository->find($id);
@@ -93,6 +110,12 @@ class CommentService
         return CommentResponse::fromEntity($comment);
     }
 
+    /**
+     * Deletes an existing comment.
+     *
+     * @param Comment $comment
+     * @return void
+     */
     public function deleteComment(Comment $comment): void
     {
         $this->entityManager->remove($comment);
@@ -101,6 +124,15 @@ class CommentService
         $this->invalidateCache($comment);
     }
 
+    /**
+     * Retrieves all comments.
+     *
+     * @param int|null $taskId
+     * @param int|null $authorId
+     * @param User|null $currentUser
+     * @return CommentListResponse
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function getAllComments(?int $taskId = null, ?int $authorId = null, ?User $currentUser = null): CommentListResponse
     {
         if (!$currentUser instanceof User) {
@@ -152,6 +184,13 @@ class CommentService
         });
     }
 
+    /**
+     * Retrieves a comment by its ID.
+     *
+     * @param int $id
+     * @return CommentResponse
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function getCommentById(int $id): CommentResponse
     {
         $cacheKey = 'comment_' . $id;
@@ -166,6 +205,13 @@ class CommentService
         });
     }
 
+    /**
+     * Retrieves comments for a given task.
+     *
+     * @param int $taskId
+     * @return CommentListResponse
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function getCommentsByTask(int $taskId): CommentListResponse
     {
         $cacheKey = 'comments_task_' . $taskId;
@@ -182,6 +228,13 @@ class CommentService
         });
     }
 
+    /**
+     * Invalidates cache for a given comment.
+     *
+     * @param Comment $comment
+     * @return void
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     private function invalidateCache(Comment $comment): void
     {
         $this->commentCache->delete('comment_' . $comment->getId());

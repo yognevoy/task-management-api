@@ -44,6 +44,13 @@ class CommentVoter extends Voter
         };
     }
 
+    /**
+     * Checks if the current user can view the target comment.
+     *
+     * @param User $currentUser
+     * @param Comment $comment
+     * @return bool
+     */
     private function canView(User $currentUser, Comment $comment): bool
     {
         if ($comment->getTask()) {
@@ -59,11 +66,25 @@ class CommentVoter extends Voter
         return $comment->getAuthor() === $currentUser;
     }
 
+    /**
+     * Checks if the current user can edit the target comment.
+     *
+     * @param User $currentUser
+     * @param Comment $comment
+     * @return bool
+     */
     private function canEdit(User $currentUser, Comment $comment): bool
     {
         return $comment->getAuthor() === $currentUser;
     }
 
+    /**
+     * Checks if the current user can delete the target comment.
+     *
+     * @param User $currentUser
+     * @param Comment $comment
+     * @return bool
+     */
     private function canDelete(User $currentUser, Comment $comment): bool
     {
         return $comment->getAuthor() === $currentUser;

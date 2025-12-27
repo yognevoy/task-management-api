@@ -8,11 +8,9 @@ use App\Comment\Application\Service\CommentService;
 use App\Comment\Domain\Exception\CommentNotFoundException;
 use App\Comment\Domain\Repository\CommentRepositoryInterface;
 use App\Comment\Infrastructure\Security\Voter\CommentVoter;
-use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\Task\Infrastructure\Security\Voter\TaskVoter;
-use App\User\Domain\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -31,6 +29,12 @@ class CommentController extends AbstractController
     {
     }
 
+    /**
+     * Retrieves all comments.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     #[Route('', name: 'get_all', methods: ['GET'])]
     public function getAllComments(Request $request): JsonResponse
     {
@@ -44,6 +48,12 @@ class CommentController extends AbstractController
         );
     }
 
+    /**
+     * Retrieves a comment by its ID.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
     public function getComment(int $id): JsonResponse
     {
@@ -59,6 +69,13 @@ class CommentController extends AbstractController
         );
     }
 
+    /**
+     * Creates a new comment.
+     *
+     * @param CreateCommentRequest $dto
+     * @return JsonResponse
+     * @throws \App\Shared\Domain\Exception\ValidationException
+     */
     #[Route('', name: 'create', methods: ['POST'])]
     public function createComment(#[MapRequestPayload] CreateCommentRequest $dto): JsonResponse
     {
@@ -70,6 +87,14 @@ class CommentController extends AbstractController
         );
     }
 
+    /**
+     * Updates an existing comment.
+     *
+     * @param int $id
+     * @param UpdateCommentRequest $dto
+     * @return JsonResponse
+     * @throws \App\Shared\Domain\Exception\ValidationException
+     */
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
     public function updateComment(int $id, #[MapRequestPayload] UpdateCommentRequest $dto): JsonResponse
     {
@@ -87,6 +112,12 @@ class CommentController extends AbstractController
         );
     }
 
+    /**
+     * Deletes an existing comment.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
     public function deleteComment(int $id): JsonResponse
     {
@@ -102,6 +133,12 @@ class CommentController extends AbstractController
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
+    /**
+     * Retrieves comments for a given task.
+     *
+     * @param int $taskId
+     * @return JsonResponse
+     */
     #[Route('/task/{taskId}', name: 'get_by_task', methods: ['GET'])]
     public function getCommentsByTask(int $taskId): JsonResponse
     {
