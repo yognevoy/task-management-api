@@ -3,11 +3,12 @@
 namespace App\User\Application\Controller;
 
 use App\Shared\Domain\Exception\ValidationException;
+use App\User\Application\DTO\CreateUserRequest;
 use App\User\Application\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api')]
@@ -20,25 +21,14 @@ class AuthController extends AbstractController
     }
 
     #[Route('/register', name: 'api_register', methods: ['POST'])]
-    public function register(Request $request): JsonResponse
+    public function register(#[MapRequestPayload] CreateUserRequest $dto): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-
-        $email = $data['email'] ?? '';
-        $password = $data['password'] ?? '';
-
-        if (empty($email) || empty($password)) {
-            return $this->json([
-                'error' => 'Email and password are required'
-            ], Response::HTTP_BAD_REQUEST);
-        }
-
         try {
-            $user = $this->userService->registerUser($email, $password);
+            $userId = $this->userService->registerUser($dto);
 
             return $this->json([
                 'message' => 'User registered successfully',
-                'user_id' => $user->getId()
+                'user_id' => $userId
             ], Response::HTTP_CREATED);
         } catch (ValidationException $e) {
             return $this->json([

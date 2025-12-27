@@ -4,14 +4,16 @@ namespace App\User\Application\Controller;
 
 use App\User\Infrastructure\Security\Voter\UserVoter;
 use App\Shared\Domain\Exception\ValidationException;
+use App\User\Application\DTO\UpdateUserRequest;
+use App\User\Application\DTO\UserListResponse;
+use App\User\Application\DTO\UserResponse;
 use App\User\Application\Service\UserService;
 use App\User\Domain\Entity\User;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -19,50 +21,36 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class UserController extends AbstractController
 {
     public function __construct(
-        private UserRepositoryInterface $userRepository,
         private UserService $userService,
-        private UserPasswordHasherInterface $passwordHasher
     ) {
     }
 
     #[Route('', name: 'get_all', methods: ['GET'])]
     public function getAllUsers(): JsonResponse
     {
-        $users = $this->userRepository->findAll();
-
-        return $this->json($users, context: ['groups' => 'user:read']);
+        return $this->json(
+            $this->userService->getAllUsers()
+        );
     }
 
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
     #[IsGranted(UserVoter::VIEW, subject: 'user')]
     public function getOne(User $user): JsonResponse
     {
-        return $this->json($user, context: ['groups' => 'user:read']);
+        return $this->json(
+            $this->userService->getUserById($user->getId())
+        );
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
     #[IsGranted(UserVoter::EDIT, subject: 'user')]
-    public function updateUser(User $user, Request $request): JsonResponse
+    public function updateUser(int $id, #[MapRequestPayload] UpdateUserRequest $dto): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-
-        if (!empty($data['email'])) {
-            $user->setEmail($data['email']);
-        }
-
-        if (!empty($data['password'])) {
-            $hashedPassword = $this->passwordHasher->hashPassword($user, $data['password']);
-            $user->setPassword($hashedPassword);
-        }
-
-        if (!empty($data['roles'])) {
-            $user->setRoles($data['roles']);
-        }
-
         try {
-            $updatedUser = $this->userService->updateUser($user);
-
-            return $this->json($updatedUser, context: ['groups' => 'user:read']);
+            return $this->json(
+                $this->userService->updateUser($id, $dto),
+                Response::HTTP_OK
+            );
         } catch (ValidationException $e) {
             return $this->json([
                 'error' => $e->getMessage(),
@@ -79,6 +67,7 @@ class UserController extends AbstractController
     {
         try {
             $this->userService->deleteUser($user);
+
             return $this->json(null, Response::HTTP_NO_CONTENT);
         } catch (\Exception $e) {
             return $this->json(['error' => 'Delete failed'], Response::HTTP_INTERNAL_SERVER_ERROR);
