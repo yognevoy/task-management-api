@@ -2,128 +2,114 @@
 
 namespace App\Project\Application\Controller;
 
-use App\Project\Domain\Entity\Project;
-use App\Project\Domain\Exception\ProjectHasTasksException;
+use App\Project\Application\DTO\CreateProjectRequest;
+use App\Project\Application\DTO\UpdateProjectRequest;
+use App\Project\Application\Service\ProjectService;
+use App\Project\Domain\Exception\ProjectNotFoundException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Project\Infrastructure\Security\Voter\ProjectVoter;
-use App\Shared\Domain\Exception\AccessDeniedException;
-use App\Task\Domain\Repository\TaskRepositoryInterface;
-use App\User\Domain\Entity\User;
-use App\User\Domain\Exception\UserNotFoundException;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/projects', name: 'api_projects_')]
 class ProjectController extends AbstractController
 {
     public function __construct(
+        private ProjectService             $projectService,
         private ProjectRepositoryInterface $projectRepository,
-        private TaskRepositoryInterface $taskRepository,
-        private EntityManagerInterface $entityManager,
-    ) {}
+    )
+    {
+    }
 
     #[Route('', name: 'get_all', methods: ['GET'])]
     public function getAllProjects(Request $request): JsonResponse
     {
         $ownerId = $request->query->getInt('owner');
 
-        if ($ownerId) {
-            $user = $this->entityManager->getRepository(User::class)->find($ownerId);
-            if (!$user) {
-                throw new UserNotFoundException();
-            }
-
-            $projects = $this->projectRepository->findByOwner($user);
-
-            return $this->json($projects, context: ['groups' => 'project:read']);
-        }
-
-        $projects = $this->projectRepository->findAll();
-
-        return $this->json($projects, context: ['groups' => 'project:read']);
+        return $this->json(
+            $this->projectService->getAllProjects($ownerId)
+        );
     }
 
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
-    #[IsGranted(ProjectVoter::VIEW, subject: 'project')]
-    public function getProject(Project $project): JsonResponse
+    public function getProject(int $id): JsonResponse
     {
-        return $this->json($project, context: ['groups' => 'project:read']);
+        // TODO: remove duplicated request
+        $project = $this->projectRepository->find($id);
+
+        if (!$project) {
+            throw new ProjectNotFoundException();
+        }
+
+        $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $project);
+
+        return $this->json(
+            $this->projectService->getProjectById($id)
+        );
     }
 
     #[Route('', name: 'create', methods: ['POST'])]
-    public function createProject(Request $request): JsonResponse
+    public function createProject(#[MapRequestPayload] CreateProjectRequest $dto): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-
-        if (empty($data['title'])) {
-            return $this->json(['error' => 'Title is required'], Response::HTTP_BAD_REQUEST);
-        }
-
-        $project = new Project();
-        $project->setTitle($data['title']);
-
-        if (isset($data['description'])) {
-            $project->setDescription($data['description']);
-        }
-
-        $currentUser = $this->getUser();
-        if (!$currentUser instanceof User) {
-            throw new AccessDeniedException();
-        }
-
-        $project->setOwner($currentUser);
-
-        $this->entityManager->persist($project);
-        $this->entityManager->flush();
-
-        return $this->json($project, Response::HTTP_CREATED, context: ['groups' => 'project:read']);
+        return $this->json(
+            $this->projectService->createProject(
+                $dto, $this->getUser()
+            ),
+            Response::HTTP_CREATED
+        );
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
-    #[IsGranted(ProjectVoter::EDIT, subject: 'project')]
-    public function updateProject(Project $project, Request $request): JsonResponse
+    public function updateProject(int $id, #[MapRequestPayload] UpdateProjectRequest $dto): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
+        $project = $this->projectRepository->find($id);
 
-        if (isset($data['title'])) {
-            $project->setTitle($data['title']);
+        if (!$project) {
+            throw new ProjectNotFoundException();
         }
 
-        if (isset($data['description'])) {
-            $project->setDescription($data['description']);
-        }
+        $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
 
-        $this->entityManager->flush();
-
-        return $this->json($project, context: ['groups' => 'project:read']);
+        return $this->json(
+            $this->projectService->updateProject(
+                $id, $dto, $this->getUser()
+            )
+        );
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
-    #[IsGranted(ProjectVoter::DELETE, subject: 'project')]
-    public function deleteProject(Project $project): JsonResponse
+    public function deleteProject(int $id): JsonResponse
     {
-        $taskCount = $this->projectRepository->countTasks($project);
-        if ($taskCount > 0) {
-            throw new ProjectHasTasksException();
+        $project = $this->projectRepository->find($id);
+
+        if (!$project) {
+            throw new ProjectNotFoundException();
         }
 
-        $this->entityManager->remove($project);
-        $this->entityManager->flush();
+        $this->denyAccessUnlessGranted(ProjectVoter::DELETE, $project);
+
+        $this->projectService->deleteProject($project);
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
     #[Route('/{id}/tasks', name: 'get_project_tasks', methods: ['GET'])]
-    #[IsGranted(ProjectVoter::VIEW_TASKS, subject: 'project')]
-    public function getProjectTasks(Project $project): JsonResponse
+    public function getProjectTasks(int $id): JsonResponse
     {
-        $tasks = $this->taskRepository->findBy(['project' => $project]);
+        $project = $this->projectRepository->find($id);
 
-        return $this->json($tasks, context: ['groups' => 'task:read']);
+        if (!$project) {
+            throw new ProjectNotFoundException();
+        }
+
+        $this->denyAccessUnlessGranted(ProjectVoter::VIEW_TASKS, $project);
+
+        return $this->json(
+            $this->projectService->getProjectTasks($id)
+        );
     }
 }
