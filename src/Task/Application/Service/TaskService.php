@@ -5,7 +5,6 @@ namespace App\Task\Application\Service;
 use App\Project\Domain\Exception\ProjectNotFoundException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Shared\Domain\Exception\AccessDeniedException;
-use App\Shared\Domain\Exception\ValidationException;
 use App\Task\Application\DTO\CreateTaskRequest;
 use App\Task\Application\DTO\UpdateTaskRequest;
 use App\Task\Domain\Entity\Task;
@@ -98,15 +97,6 @@ class TaskService
 
         $task->setOwner($currentUser);
 
-        $errors = $this->validator->validate($task);
-        if (count($errors) > 0) {
-            $messages = [];
-            foreach ($errors as $error) {
-                $messages[] = $error->getMessage();
-            }
-            throw new ValidationException($messages);
-        }
-
         $this->entityManager->persist($task);
         $this->entityManager->flush();
 
@@ -195,15 +185,6 @@ class TaskService
             $task->setAssignee(null);
         }
 
-        $errors = $this->validator->validate($task);
-        if (count($errors) > 0) {
-            $messages = [];
-            foreach ($errors as $error) {
-                $messages[] = $error->getMessage();
-            }
-            throw new ValidationException($messages);
-        }
-
         $this->entityManager->flush();
 
         $this->invalidateCache($task);
@@ -217,16 +198,6 @@ class TaskService
         $this->entityManager->flush();
 
         $this->invalidateCache($task);
-    }
-
-    private function invalidateCache(Task $task): void
-    {
-        $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
-        if ($task->getAssignee()) {
-            $this->taskCache->delete('tasks_user_' . $task->getAssigneeId());
-        }
-        $this->taskCache->delete('tasks_all');
-        $this->taskCache->delete('task_' . $task->getId());
     }
 
     public function getAllTasks(?User $currentUser): array
@@ -258,5 +229,15 @@ class TaskService
         }
 
         return $task;
+    }
+
+    private function invalidateCache(Task $task): void
+    {
+        $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
+        if ($task->getAssignee()) {
+            $this->taskCache->delete('tasks_user_' . $task->getAssigneeId());
+        }
+        $this->taskCache->delete('tasks_all');
+        $this->taskCache->delete('task_' . $task->getId());
     }
 }
