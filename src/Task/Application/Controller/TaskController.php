@@ -50,6 +50,7 @@ class TaskController extends AbstractController
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
     public function getTask(int $id): JsonResponse
     {
+        // TODO: remove duplicated request
         $task = $this->taskRepository->find($id);
 
         if (!$task) {
