@@ -2,6 +2,7 @@
 
 namespace App\Task\Application\Controller;
 
+use App\Project\Domain\Exception\ProjectNotFoundException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Shared\Domain\Exception\ValidationException;
@@ -18,6 +19,7 @@ use App\Task\Domain\Exception\ParentTaskNotFoundException;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\User\Domain\Entity\User;
+use App\User\Domain\Exception\UserNotFoundException;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -154,7 +156,7 @@ class TaskController extends AbstractController
         if ($dto->projectId !== null) {
             $project = $this->projectRepository->find($dto->projectId);
             if (!$project) {
-                return $this->json(['error' => 'Project not found'], Response::HTTP_BAD_REQUEST);
+                throw new ProjectNotFoundException();
             }
 
             $currentUser = $this->getUser();
@@ -171,7 +173,7 @@ class TaskController extends AbstractController
             $assignee = $this->userRepository->find($dto->assigneeId);
 
             if (!$assignee) {
-                return $this->json(['error' => 'Assignee not found'], Response::HTTP_BAD_REQUEST);
+                throw new UserNotFoundException();
             }
 
             $task->setAssignee($assignee);
@@ -269,7 +271,7 @@ class TaskController extends AbstractController
             $project = $this->projectRepository->find($dto->projectId);
 
             if (!$project) {
-                return $this->json(['error' => 'Project not found'], Response::HTTP_BAD_REQUEST);
+                throw new ProjectNotFoundException();
             }
 
             $currentUser = $this->getUser();
@@ -288,7 +290,7 @@ class TaskController extends AbstractController
             $assignee = $this->userRepository->find($dto->assigneeId);
 
             if (!$assignee) {
-                return $this->json(['error' => 'Assignee not found'], Response::HTTP_BAD_REQUEST);
+                throw new UserNotFoundException();
             }
 
             $task->setAssignee($assignee);
