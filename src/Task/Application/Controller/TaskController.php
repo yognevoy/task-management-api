@@ -2,10 +2,7 @@
 
 namespace App\Task\Application\Controller;
 
-use App\Project\Domain\Exception\ProjectNotFoundException;
-use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Shared\Domain\Exception\AccessDeniedException;
-use App\Shared\Domain\Exception\ValidationException;
 use App\Task\Application\DTO\CreateTaskRequest;
 use App\Task\Application\DTO\TaskResponse;
 use App\Task\Application\DTO\UpdateTaskRequest;
@@ -15,26 +12,21 @@ use App\Task\Domain\Entity\Task;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\User\Domain\Entity\User;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 
 #[Route('/api/tasks', name: 'api_tasks_')]
 class TaskController extends AbstractController
 {
     public function __construct(
-        private TaskService                $taskService,
-        private TaskRepositoryInterface    $taskRepository,
-        private ProjectRepositoryInterface $projectRepository,
-        private EntityManagerInterface     $entityManager,
-        private CacheInterface             $taskCache,
-        private ValidatorInterface         $validator,
+        private TaskService             $taskService,
+        private TaskRepositoryInterface $taskRepository,
+        private CacheInterface          $taskCache,
     )
     {
     }
@@ -54,20 +46,7 @@ class TaskController extends AbstractController
         }
 
         $taskResponses = $this->taskCache->get($cacheKey, function () use ($currentUser) {
-            if (!$currentUser->isAdmin()) {
-                $qb = $this->entityManager->createQueryBuilder();
-                $tasks = $qb
-                    ->select('t')
-                    ->from(Task::class, 't')
-                    ->leftJoin('t.project', 'p')
-                    ->where('t.owner = :user OR p.owner = :user')
-                    ->setParameter('user', $currentUser)
-                    ->orderBy('t.id', 'ASC')
-                    ->getQuery()
-                    ->getResult();
-            } else {
-                $tasks = $this->taskRepository->findAll();
-            }
+            $tasks = $this->taskService->getAllTasks($currentUser);
 
             return array_map(
                 fn(Task $task) => TaskResponse::fromEntity($task),
@@ -84,11 +63,7 @@ class TaskController extends AbstractController
         $cacheKey = 'task_' . $id;
 
         $taskResponse = $this->taskCache->get($cacheKey, function () use ($id) {
-            $task = $this->taskRepository->find($id);
-
-            if (!$task) {
-                throw new TaskNotFoundException();
-            }
+            $task = $this->taskService->getTaskById($id);
 
             $this->denyAccessUnlessGranted(TaskVoter::VIEW, $task);
 

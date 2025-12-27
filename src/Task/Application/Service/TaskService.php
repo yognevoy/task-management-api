@@ -228,4 +228,35 @@ class TaskService
         $this->taskCache->delete('tasks_all');
         $this->taskCache->delete('task_' . $task->getId());
     }
+
+    public function getAllTasks(?User $currentUser): array
+    {
+        if (!$currentUser->isAdmin()) {
+            $qb = $this->entityManager->createQueryBuilder();
+            $tasks = $qb
+                ->select('t')
+                ->from(Task::class, 't')
+                ->leftJoin('t.project', 'p')
+                ->where('t.owner = :user OR p.owner = :user')
+                ->setParameter('user', $currentUser)
+                ->orderBy('t.id', 'ASC')
+                ->getQuery()
+                ->getResult();
+        } else {
+            $tasks = $this->taskRepository->findAll();
+        }
+
+        return $tasks;
+    }
+
+    public function getTaskById(int $id): Task
+    {
+        $task = $this->taskRepository->find($id);
+
+        if (!$task) {
+            throw new TaskNotFoundException();
+        }
+
+        return $task;
+    }
 }
