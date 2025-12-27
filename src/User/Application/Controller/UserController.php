@@ -25,6 +25,11 @@ class UserController extends AbstractController
     ) {
     }
 
+    /**
+     * Retrieves all users.
+     *
+     * @return JsonResponse
+     */
     #[Route('', name: 'get_all', methods: ['GET'])]
     public function getAllUsers(): JsonResponse
     {
@@ -33,6 +38,12 @@ class UserController extends AbstractController
         );
     }
 
+    /**
+     * Retrieves a user by its ID.
+     *
+     * @param User $user
+     * @return JsonResponse
+     */
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
     #[IsGranted(UserVoter::VIEW, subject: 'user')]
     public function getOne(User $user): JsonResponse
@@ -42,6 +53,13 @@ class UserController extends AbstractController
         );
     }
 
+    /**
+     * Updates an existing user.
+     *
+     * @param int $id
+     * @param UpdateUserRequest $dto
+     * @return JsonResponse
+     */
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
     #[IsGranted(UserVoter::EDIT, subject: 'user')]
     public function updateUser(int $id, #[MapRequestPayload] UpdateUserRequest $dto): JsonResponse
@@ -61,6 +79,12 @@ class UserController extends AbstractController
         }
     }
 
+    /**
+     * Deletes an existing user.
+     *
+     * @param User $user
+     * @return JsonResponse
+     */
     #[Route('/{id}', name: 'api_user_delete', methods: ['DELETE'])]
     #[IsGranted(UserVoter::DELETE, subject: 'user')]
     public function deleteUser(User $user): JsonResponse

@@ -27,6 +27,13 @@ class UserService
     ) {
     }
 
+    /**
+     * Registers a new user.
+     *
+     * @param CreateUserRequest $dto
+     * @return int
+     * @throws ValidationException
+     */
     public function registerUser(CreateUserRequest $dto): int
     {
         $user = new User();
@@ -51,6 +58,14 @@ class UserService
         return $user->getId();
     }
 
+    /**
+     * Updates an existing user.
+     *
+     * @param int $id
+     * @param UpdateUserRequest $dto
+     * @return UserResponse
+     * @throws ValidationException
+     */
     public function updateUser(int $id, UpdateUserRequest $dto): UserResponse
     {
         $user = $this->userRepository->find($id);
@@ -87,6 +102,12 @@ class UserService
         return UserResponse::fromEntity($user);
     }
 
+    /**
+     * Deletes an existing user.
+     *
+     * @param User $user
+     * @return void
+     */
     public function deleteUser(User $user): void
     {
         $this->entityManager->remove($user);
@@ -95,6 +116,12 @@ class UserService
         $this->invalidateCache($user);
     }
 
+    /**
+     * Retrieves all users.
+     *
+     * @return UserListResponse
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function getAllUsers(): UserListResponse
     {
         $cacheKey = 'users_all';
@@ -106,12 +133,13 @@ class UserService
         });
     }
 
-    private function invalidateCache(User $user): void
-    {
-        $this->userCache->delete('user_' . $user->getId());
-        $this->userCache->delete('users_all');
-    }
-
+    /**
+     * Retrieves a user by its ID.
+     *
+     * @param int $id
+     * @return UserResponse
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function getUserById(int $id): UserResponse
     {
         $cacheKey = 'user_' . $id;
@@ -124,5 +152,18 @@ class UserService
 
             return UserResponse::fromEntity($user);
         });
+    }
+
+    /**
+     * Invalidates cache for a given user.
+     *
+     * @param User $user
+     * @return void
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
+    private function invalidateCache(User $user): void
+    {
+        $this->userCache->delete('user_' . $user->getId());
+        $this->userCache->delete('users_all');
     }
 }

@@ -43,16 +43,37 @@ class UserVoter extends Voter
         };
     }
 
+    /**
+     * Checks if the current user can view the target user.
+     *
+     * @param User $currentUser
+     * @param User $targetUser
+     * @return bool
+     */
     private function canView(User $currentUser, User $targetUser): bool
     {
         return true;
     }
 
+    /**
+     * Checks if the current user can edit the target user.
+     *
+     * @param User $currentUser
+     * @param User $targetUser
+     * @return bool
+     */
     private function canEdit(User $currentUser, User $targetUser): bool
     {
         return $currentUser === $targetUser;
     }
 
+    /**
+     * Checks if the current user can delete the target user.
+     *
+     * @param User $currentUser
+     * @param User $targetUser
+     * @return bool
+     */
     private function canDelete(User $currentUser, User $targetUser): bool
     {
         return $currentUser === $targetUser;
