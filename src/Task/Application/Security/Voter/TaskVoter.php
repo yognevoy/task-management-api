@@ -44,6 +44,13 @@ class TaskVoter extends Voter
         };
     }
 
+    /**
+     * Determines if the user can view the task.
+     *
+     * @param Task $task
+     * @param User $user
+     * @return bool
+     */
     private function canView(Task $task, User $user): bool
     {
         if ($task->getOwner() === $user) {
@@ -57,11 +64,25 @@ class TaskVoter extends Voter
         return false;
     }
 
+    /**
+     * Determines if the user can edit the task.
+     *
+     * @param Task $task
+     * @param User $user
+     * @return bool
+     */
     private function canEdit(Task $task, User $user): bool
     {
         return $task->getOwner() === $user;
     }
 
+    /**
+     * Determines if the user can delete the task.
+     *
+     * @param Task $task
+     * @param User $user
+     * @return bool
+     */
     private function canDelete(Task $task, User $user): bool
     {
         return $task->getOwner() === $user;

@@ -20,7 +20,7 @@ class TaskRepository extends ServiceEntityRepository implements TaskRepositoryIn
     }
 
     /**
-     * Find all tasks by owner
+     * Find all tasks by owner.
      *
      * @return Task[]
      */
@@ -36,7 +36,7 @@ class TaskRepository extends ServiceEntityRepository implements TaskRepositoryIn
     }
 
     /**
-     * Find all subtasks by parent task
+     * Find all subtasks by parent task.
      *
      * @return Task[]
      */
@@ -52,7 +52,7 @@ class TaskRepository extends ServiceEntityRepository implements TaskRepositoryIn
     }
 
     /**
-     * Find all tasks by project
+     * Find all tasks by project.
      *
      * @return Task[]
      */

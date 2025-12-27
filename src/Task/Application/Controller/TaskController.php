@@ -25,6 +25,12 @@ class TaskController extends AbstractController
     {
     }
 
+    /**
+     * Retrieves all tasks for the current user.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     #[Route('', name: 'get_all', methods: ['GET'])]
     public function getAllTasks(Request $request): JsonResponse
     {
@@ -35,6 +41,12 @@ class TaskController extends AbstractController
         );
     }
 
+    /**
+     * Retrieves a task by its ID.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
     public function getTask(int $id): JsonResponse
     {
@@ -51,6 +63,12 @@ class TaskController extends AbstractController
         );
     }
 
+    /**
+     * Creates a new task.
+     *
+     * @param CreateTaskRequest $dto
+     * @return JsonResponse
+     */
     #[Route('', name: 'create', methods: ['POST'])]
     public function createTask(#[MapRequestPayload] CreateTaskRequest $dto): JsonResponse
     {
@@ -62,6 +80,13 @@ class TaskController extends AbstractController
         );
     }
 
+    /**
+     * Updates an existing task.
+     *
+     * @param int $id
+     * @param UpdateTaskRequest $dto
+     * @return JsonResponse
+     */
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
     public function updateTask(int $id, #[MapRequestPayload] UpdateTaskRequest $dto): JsonResponse
     {
@@ -80,6 +105,12 @@ class TaskController extends AbstractController
         );
     }
 
+    /**
+     * Deletes an existing task.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
     public function deleteTask(int $id): JsonResponse
     {
@@ -96,6 +127,12 @@ class TaskController extends AbstractController
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
+    /**
+     * Retrieves subtasks for a given task.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     #[Route('/{id}/subtasks', name: 'get_subtasks', methods: ['GET'])]
     public function getSubtasks(int $id): JsonResponse
     {

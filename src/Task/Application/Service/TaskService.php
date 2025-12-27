@@ -35,6 +35,14 @@ class TaskService
     {
     }
 
+    /**
+     * Creates a new task.
+     *
+     * @param CreateTaskRequest $dto
+     * @param User|null $currentUser
+     * @return TaskResponse
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function createTask(CreateTaskRequest $dto, ?User $currentUser = null): TaskResponse
     {
         if (!$currentUser instanceof User) {
@@ -109,6 +117,15 @@ class TaskService
         return TaskResponse::fromEntity($task);
     }
 
+    /**
+     * Updates an existing task.
+     *
+     * @param int $id
+     * @param UpdateTaskRequest $dto
+     * @param User|null $currentUser
+     * @return TaskResponse
+     * @throws \Exception
+     */
     public function updateTask(int $id, UpdateTaskRequest $dto, ?User $currentUser = null): TaskResponse
     {
         if (!$currentUser instanceof User) {
@@ -200,6 +217,12 @@ class TaskService
         return TaskResponse::fromEntity($task);
     }
 
+    /**
+     * Deletes a task.
+     *
+     * @param Task $task
+     * @return void
+     */
     public function deleteTask(Task $task): void
     {
         $this->entityManager->remove($task);
@@ -208,6 +231,13 @@ class TaskService
         $this->invalidateCache($task);
     }
 
+    /**
+     * Retrieves all tasks for the current user.
+     *
+     * @param User|null $currentUser
+     * @return TaskListResponse
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function getAllTasks(?User $currentUser = null): TaskListResponse
     {
         if (!$currentUser instanceof User) {
@@ -239,6 +269,13 @@ class TaskService
         });
     }
 
+    /**
+     * Retrieves a task by its ID.
+     *
+     * @param int $id
+     * @return TaskResponse
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function getTaskById(int $id): TaskResponse
     {
         $cacheKey = 'task_' . $id;
@@ -254,6 +291,13 @@ class TaskService
         });
     }
 
+    /**
+     * Retrieves subtasks for a given task.
+     *
+     * @param int $id
+     * @return TaskListResponse
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function getSubtasks(int $id): TaskListResponse
     {
         $cacheKey = 'subtasks_' . $id;
@@ -271,6 +315,13 @@ class TaskService
         });
     }
 
+    /**
+     * Invalidates cache for a given task.
+     *
+     * @param Task $task
+     * @return void
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     private function invalidateCache(Task $task): void
     {
         $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
