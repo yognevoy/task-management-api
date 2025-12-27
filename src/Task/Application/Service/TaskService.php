@@ -6,6 +6,8 @@ use App\Project\Domain\Exception\ProjectNotFoundException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Application\DTO\CreateTaskRequest;
+use App\Task\Application\DTO\TaskListResponse;
+use App\Task\Application\DTO\TaskResponse;
 use App\Task\Application\DTO\UpdateTaskRequest;
 use App\Task\Domain\Entity\Task;
 use App\Task\Domain\Enum\TaskPriority;
@@ -19,7 +21,6 @@ use App\User\Domain\Entity\User;
 use App\User\Domain\Exception\UserNotFoundException;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 
 class TaskService
@@ -30,13 +31,16 @@ class TaskService
         private ProjectRepositoryInterface $projectRepository,
         private EntityManagerInterface     $entityManager,
         private CacheInterface             $taskCache,
-        private ValidatorInterface         $validator,
     )
     {
     }
 
-    public function createTask(CreateTaskRequest $dto, User $currentUser): Task
+    public function createTask(CreateTaskRequest $dto, ?User $currentUser = null): TaskResponse
     {
+        if (!$currentUser instanceof User) {
+            throw new AccessDeniedException();
+        }
+
         $task = new Task();
         $task->setTitle($dto->title);
 
@@ -102,11 +106,15 @@ class TaskService
 
         $this->invalidateCache($task);
 
-        return $task;
+        return TaskResponse::fromEntity($task);
     }
 
-    public function updateTask(int $id, UpdateTaskRequest $dto, ?User $currentUser = null): Task
+    public function updateTask(int $id, UpdateTaskRequest $dto, ?User $currentUser = null): TaskResponse
     {
+        if (!$currentUser instanceof User) {
+            throw new AccessDeniedException();
+        }
+
         $task = $this->taskRepository->find($id);
         if (!$task) {
             throw new TaskNotFoundException();
@@ -189,7 +197,7 @@ class TaskService
 
         $this->invalidateCache($task);
 
-        return $task;
+        return TaskResponse::fromEntity($task);
     }
 
     public function deleteTask(Task $task): void
@@ -200,27 +208,53 @@ class TaskService
         $this->invalidateCache($task);
     }
 
-    public function getAllTasks(?User $currentUser): array
+    public function getAllTasks(?User $currentUser = null): TaskListResponse
     {
-        if (!$currentUser->isAdmin()) {
-            $qb = $this->entityManager->createQueryBuilder();
-            $tasks = $qb
-                ->select('t')
-                ->from(Task::class, 't')
-                ->leftJoin('t.project', 'p')
-                ->where('t.owner = :user OR p.owner = :user')
-                ->setParameter('user', $currentUser)
-                ->orderBy('t.id', 'ASC')
-                ->getQuery()
-                ->getResult();
-        } else {
-            $tasks = $this->taskRepository->findAll();
+        if (!$currentUser instanceof User) {
+            throw new AccessDeniedException();
         }
 
-        return $tasks;
+        $cacheKey = 'tasks_user_' . $currentUser->getId();
+        if ($currentUser->isAdmin()) {
+            $cacheKey = 'tasks_all';
+        }
+
+        return $this->taskCache->get($cacheKey, function () use ($currentUser) {
+            if (!$currentUser->isAdmin()) {
+                $qb = $this->entityManager->createQueryBuilder();
+                $tasks = $qb
+                    ->select('t')
+                    ->from(Task::class, 't')
+                    ->leftJoin('t.project', 'p')
+                    ->where('t.owner = :user OR p.owner = :user')
+                    ->setParameter('user', $currentUser)
+                    ->orderBy('t.id', 'ASC')
+                    ->getQuery()
+                    ->getResult();
+            } else {
+                $tasks = $this->taskRepository->findAll();
+            }
+
+            return new TaskListResponse($tasks);
+        });
     }
 
-    public function getTaskById(int $id): Task
+    public function getTaskById(int $id): TaskResponse
+    {
+        $cacheKey = 'task_' . $id;
+
+        return $this->taskCache->get($cacheKey, function () use ($id) {
+            $task = $this->taskRepository->find($id);
+
+            if (!$task) {
+                throw new TaskNotFoundException();
+            }
+
+            return TaskResponse::fromEntity($task);
+        });
+    }
+
+    public function getSubtasks(int $id): TaskListResponse
     {
         $task = $this->taskRepository->find($id);
 
@@ -228,7 +262,9 @@ class TaskService
             throw new TaskNotFoundException();
         }
 
-        return $task;
+        $subtasks = $this->taskRepository->findByParent($task);
+
+        return new TaskListResponse($subtasks);
     }
 
     private function invalidateCache(Task $task): void
