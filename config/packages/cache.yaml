@@ -13,3 +13,6 @@ framework:
             project_cache:
                 adapter: cache.app
                 default_lifetime: 3600
+            comment_cache:
+                adapter: cache.app
+                default_lifetime: 3600

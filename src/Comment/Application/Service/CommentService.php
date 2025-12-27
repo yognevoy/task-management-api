@@ -19,6 +19,7 @@ use App\User\Domain\Exception\UserNotFoundException;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Cache\CacheInterface;
 
 class CommentService
 {
@@ -28,6 +29,7 @@ class CommentService
         private UserRepositoryInterface $userRepository,
         private EntityManagerInterface $entityManager,
         private ValidatorInterface $validator,
+        private CacheInterface $commentCache,
     ) {
     }
 
@@ -59,6 +61,8 @@ class CommentService
         $this->entityManager->persist($comment);
         $this->entityManager->flush();
 
+        $this->invalidateCache($comment);
+
         return CommentResponse::fromEntity($comment);
     }
 
@@ -84,6 +88,8 @@ class CommentService
 
         $this->entityManager->flush();
 
+        $this->invalidateCache($comment);
+
         return CommentResponse::fromEntity($comment);
     }
 
@@ -91,6 +97,8 @@ class CommentService
     {
         $this->entityManager->remove($comment);
         $this->entityManager->flush();
+
+        $this->invalidateCache($comment);
     }
 
     public function getAllComments(?int $taskId = null, ?int $authorId = null, ?User $currentUser = null): CommentListResponse
@@ -99,64 +107,87 @@ class CommentService
             throw new AccessDeniedException();
         }
 
-        if ($taskId !== null) {
+        $cacheKey = $taskId ? 'comments_task_' . $taskId :
+                   ($authorId ? 'comments_author_' . $authorId :
+                   ($currentUser->isAdmin() ? 'comments_all' : 'comments_user_' . $currentUser->getId()));
+
+        return $this->commentCache->get($cacheKey, function () use ($taskId, $authorId, $currentUser) {
+            if ($taskId !== null) {
+                $task = $this->taskRepository->find($taskId);
+                if (!$task) {
+                    throw new TaskNotFoundException();
+                }
+
+                $comments = $this->commentRepository->findByTask($task);
+            } elseif ($authorId !== null) {
+                $user = $this->userRepository->find($authorId);
+                if (!$user) {
+                    throw new UserNotFoundException();
+                }
+
+                if ($currentUser->getId() !== $user->getId() && !$currentUser->isAdmin()) {
+                    throw new AccessDeniedException();
+                }
+
+                $comments = $this->commentRepository->findByAuthor($user);
+            } else {
+                if (!$currentUser->isAdmin()) {
+                    $qb = $this->entityManager->createQueryBuilder();
+                    $comments = $qb
+                        ->select('c')
+                        ->from(Comment::class, 'c')
+                        ->join('c.task', 't')
+                        ->leftJoin('t.project', 'p')
+                        ->where('t.owner = :user OR p.owner = :user')
+                        ->setParameter('user', $currentUser)
+                        ->orderBy('c.createdAt', 'ASC')
+                        ->getQuery()
+                        ->getResult();
+                } else {
+                    $comments = $this->commentRepository->findAll();
+                }
+            }
+
+            return new CommentListResponse($comments);
+        });
+    }
+
+    public function getCommentById(int $id): CommentResponse
+    {
+        $cacheKey = 'comment_' . $id;
+
+        return $this->commentCache->get($cacheKey, function () use ($id) {
+            $comment = $this->commentRepository->find($id);
+            if (!$comment) {
+                throw new CommentNotFoundException();
+            }
+
+            return CommentResponse::fromEntity($comment);
+        });
+    }
+
+    public function getCommentsByTask(int $taskId): CommentListResponse
+    {
+        $cacheKey = 'comments_task_' . $taskId;
+
+        return $this->commentCache->get($cacheKey, function () use ($taskId) {
             $task = $this->taskRepository->find($taskId);
             if (!$task) {
                 throw new TaskNotFoundException();
             }
 
             $comments = $this->commentRepository->findByTask($task);
-        } elseif ($authorId !== null) {
-            $user = $this->userRepository->find($authorId);
-            if (!$user) {
-                throw new UserNotFoundException();
-            }
 
-            if ($currentUser->getId() !== $user->getId() && !$currentUser->isAdmin()) {
-                throw new AccessDeniedException();
-            }
-
-            $comments = $this->commentRepository->findByAuthor($user);
-        } else {
-            if (!$currentUser->isAdmin()) {
-                $qb = $this->entityManager->createQueryBuilder();
-                $comments = $qb
-                    ->select('c')
-                    ->from(Comment::class, 'c')
-                    ->join('c.task', 't')
-                    ->leftJoin('t.project', 'p')
-                    ->where('t.owner = :user OR p.owner = :user')
-                    ->setParameter('user', $currentUser)
-                    ->orderBy('c.createdAt', 'ASC')
-                    ->getQuery()
-                    ->getResult();
-            } else {
-                $comments = $this->commentRepository->findAll();
-            }
-        }
-
-        return new CommentListResponse($comments);
+            return new CommentListResponse($comments);
+        });
     }
 
-    public function getCommentById(int $id): CommentResponse
+    private function invalidateCache(Comment $comment): void
     {
-        $comment = $this->commentRepository->find($id);
-        if (!$comment) {
-            throw new CommentNotFoundException();
-        }
-
-        return CommentResponse::fromEntity($comment);
-    }
-
-    public function getCommentsByTask(int $taskId): CommentListResponse
-    {
-        $task = $this->taskRepository->find($taskId);
-        if (!$task) {
-            throw new TaskNotFoundException();
-        }
-
-        $comments = $this->commentRepository->findByTask($task);
-
-        return new CommentListResponse($comments);
+        $this->commentCache->delete('comment_' . $comment->getId());
+        $this->commentCache->delete('comments_task_' . $comment->getTaskId());
+        $this->commentCache->delete('comments_author_' . $comment->getAuthorId());
+        $this->commentCache->delete('comments_all');
+        $this->commentCache->delete('comments_user_' . $comment->getAuthorId());
     }
 }
