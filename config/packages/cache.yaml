@@ -10,3 +10,6 @@ framework:
             user_cache:
                 adapter: cache.app
                 default_lifetime: 1800
+            project_cache:
+                adapter: cache.app
+                default_lifetime: 3600

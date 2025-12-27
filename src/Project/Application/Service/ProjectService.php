@@ -8,6 +8,7 @@ use App\Project\Application\DTO\ProjectResponse;
 use App\Project\Application\DTO\UpdateProjectRequest;
 use App\Project\Domain\Entity\Project;
 use App\Project\Domain\Exception\ProjectHasTasksException;
+use App\Project\Domain\Exception\ProjectNotFoundException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Application\DTO\TaskListResponse;
@@ -17,6 +18,7 @@ use App\User\Domain\Exception\UserNotFoundException;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Cache\CacheInterface;
 
 class ProjectService
 {
@@ -26,6 +28,7 @@ class ProjectService
         private UserRepositoryInterface $userRepository,
         private EntityManagerInterface $entityManager,
         private ValidatorInterface $validator,
+        private CacheInterface $projectCache,
     ) {
     }
 
@@ -56,6 +59,8 @@ class ProjectService
         $this->entityManager->persist($project);
         $this->entityManager->flush();
 
+        $this->invalidateCache($project);
+
         return ProjectResponse::fromEntity($project);
     }
 
@@ -63,7 +68,7 @@ class ProjectService
     {
         $project = $this->projectRepository->find($id);
         if (!$project) {
-            throw new \App\Project\Domain\Exception\ProjectNotFoundException();
+            throw new ProjectNotFoundException();
         }
 
         if ($dto->title !== null) {
@@ -85,6 +90,8 @@ class ProjectService
 
         $this->entityManager->flush();
 
+        $this->invalidateCache($project);
+
         return ProjectResponse::fromEntity($project);
     }
 
@@ -97,45 +104,60 @@ class ProjectService
 
         $this->entityManager->remove($project);
         $this->entityManager->flush();
+
+        $this->invalidateCache($project);
     }
 
     public function getAllProjects(?int $ownerId = null): ProjectListResponse
     {
-        $projects = [];
+        $cacheKey = $ownerId ? 'projects_user_' . $ownerId : 'projects_all';
 
-        if ($ownerId !== null) {
-            $user = $this->userRepository->find($ownerId);
-            if (!$user) {
-                throw new UserNotFoundException();
+        return $this->projectCache->get($cacheKey, function () use ($ownerId) {
+            if ($ownerId !== null) {
+                $user = $this->userRepository->find($ownerId);
+                if (!$user) {
+                    throw new UserNotFoundException();
+                }
+
+                $projects = $this->projectRepository->findByOwner($user);
+            } else {
+                $projects = $this->projectRepository->findAll();
             }
 
-            $projects = $this->projectRepository->findByOwner($user);
-        } else {
-            $projects = $this->projectRepository->findAll();
-        }
-
-        return new ProjectListResponse($projects);
+            return new ProjectListResponse($projects);
+        });
     }
 
     public function getProjectById(int $id): ProjectResponse
     {
-        $project = $this->projectRepository->find($id);
-        if (!$project) {
-            throw new \App\Project\Domain\Exception\ProjectNotFoundException();
-        }
+        $cacheKey = 'project_' . $id;
 
-        return ProjectResponse::fromEntity($project);
+        return $this->projectCache->get($cacheKey, function () use ($id) {
+            $project = $this->projectRepository->find($id);
+            if (!$project) {
+                throw new ProjectNotFoundException();
+            }
+
+            return ProjectResponse::fromEntity($project);
+        });
     }
 
     public function getProjectTasks(int $id): TaskListResponse
     {
         $project = $this->projectRepository->find($id);
         if (!$project) {
-            throw new \App\Project\Domain\Exception\ProjectNotFoundException();
+            throw new ProjectNotFoundException();
         }
 
         $tasks = $this->taskRepository->findBy(['project' => $project]);
 
         return new TaskListResponse($tasks);
+    }
+
+    private function invalidateCache(Project $project): void
+    {
+        $this->projectCache->delete('project_' . $project->getId());
+        $this->projectCache->delete('projects_all');
+        $this->projectCache->delete('projects_user_' . $project->getOwnerId());
     }
 }
