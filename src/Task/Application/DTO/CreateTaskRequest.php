@@ -48,20 +48,4 @@ class CreateTaskRequest
     #[Assert\Type("integer")]
     #[Assert\Positive]
     public ?int $assigneeId = null;
-
-    public static function fromArray(array $data): self
-    {
-        $dto = new self();
-        $dto->title = $data['title'] ?? null;
-        $dto->description = $data['description'] ?? null;
-        $dto->status = $data['status'] ?? null;
-        $dto->type = $data['type'] ?? null;
-        $dto->priority = $data['priority'] ?? null;
-        $dto->dueDate = $data['dueDate'] ?? null;
-        $dto->parentId = $data['parentId'] ?? null;
-        $dto->projectId = $data['projectId'] ?? null;
-        $dto->assigneeId = $data['assigneeId'] ?? null;
-
-        return $dto;
-    }
 }

@@ -4,6 +4,7 @@ namespace App\Task\Application\Service;
 
 use App\Project\Domain\Exception\ProjectNotFoundException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
+use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Shared\Domain\Exception\ValidationException;
 use App\Task\Application\DTO\CreateTaskRequest;
 use App\Task\Application\DTO\UpdateTaskRequest;
@@ -13,12 +14,14 @@ use App\Task\Domain\Enum\TaskStatus;
 use App\Task\Domain\Enum\TaskType;
 use App\Task\Domain\Exception\CircularTaskReferenceException;
 use App\Task\Domain\Exception\ParentTaskNotFoundException;
+use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\User\Domain\Entity\User;
 use App\User\Domain\Exception\UserNotFoundException;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Cache\CacheInterface;
 
 class TaskService
 {
@@ -27,12 +30,13 @@ class TaskService
         private UserRepositoryInterface    $userRepository,
         private ProjectRepositoryInterface $projectRepository,
         private EntityManagerInterface     $entityManager,
+        private CacheInterface             $taskCache,
         private ValidatorInterface         $validator,
     )
     {
     }
 
-    public function createTask(CreateTaskRequest $dto, User $owner): Task
+    public function createTask(CreateTaskRequest $dto, User $currentUser): Task
     {
         $task = new Task();
         $task->setTitle($dto->title);
@@ -75,6 +79,10 @@ class TaskService
                 throw new ProjectNotFoundException();
             }
 
+            if ($currentUser->getId() !== $project->getOwnerId()) {
+                throw new AccessDeniedException();
+            }
+
             $task->setProject($project);
         }
 
@@ -88,7 +96,7 @@ class TaskService
             $task->setAssignee($assignee);
         }
 
-        $task->setOwner($owner);
+        $task->setOwner($currentUser);
 
         $errors = $this->validator->validate($task);
         if (count($errors) > 0) {
@@ -102,11 +110,18 @@ class TaskService
         $this->entityManager->persist($task);
         $this->entityManager->flush();
 
+        $this->invalidateCache($task);
+
         return $task;
     }
 
-    public function updateTask(Task $task, UpdateTaskRequest $dto): Task
+    public function updateTask(int $id, UpdateTaskRequest $dto, ?User $currentUser = null): Task
     {
+        $task = $this->taskRepository->find($id);
+        if (!$task) {
+            throw new TaskNotFoundException();
+        }
+
         if ($dto->title !== null) {
             $task->setTitle($dto->title);
         }
@@ -159,6 +174,10 @@ class TaskService
                 throw new ProjectNotFoundException();
             }
 
+            if ($currentUser !== null && $currentUser->getId() !== $project->getOwnerId()) {
+                throw new AccessDeniedException();
+            }
+
             $task->setProject($project);
         } elseif ($dto->projectId === 0) {
             $task->setProject(null);
@@ -187,6 +206,8 @@ class TaskService
 
         $this->entityManager->flush();
 
+        $this->invalidateCache($task);
+
         return $task;
     }
 
@@ -194,5 +215,17 @@ class TaskService
     {
         $this->entityManager->remove($task);
         $this->entityManager->flush();
+
+        $this->invalidateCache($task);
+    }
+
+    private function invalidateCache(Task $task): void
+    {
+        $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
+        if ($task->getAssignee()) {
+            $this->taskCache->delete('tasks_user_' . $task->getAssigneeId());
+        }
+        $this->taskCache->delete('tasks_all');
+        $this->taskCache->delete('task_' . $task->getId());
     }
 }

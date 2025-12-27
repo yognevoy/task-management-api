@@ -20,6 +20,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\CacheInterface;
@@ -98,49 +99,20 @@ class TaskController extends AbstractController
     }
 
     #[Route('', name: 'create', methods: ['POST'])]
-    public function createTask(Request $request): JsonResponse
+    public function createTask(#[MapRequestPayload] CreateTaskRequest $dto): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
-
-        $dto = CreateTaskRequest::fromArray($data);
-
-        $errors = $this->validator->validate($dto);
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[$error->getPropertyPath()] = $error->getMessage();
-            }
-
-            throw new ValidationException($errorMessages);
-        }
-
         $currentUser = $this->getUser();
         if (!$currentUser instanceof User) {
             throw new AccessDeniedException();
         }
 
-        if ($dto->projectId !== null) {
-            $project = $this->projectRepository->find($dto->projectId);
-            if (!$project) {
-                throw new ProjectNotFoundException();
-            }
-
-            if ($currentUser->getId() !== $project->getOwner()->getId()) {
-                throw new AccessDeniedException();
-            }
-        }
-
         $task = $this->taskService->createTask($dto, $currentUser);
-
-        // Invalidate cache
-        $this->taskCache->delete('tasks_user_' . $currentUser->getId());
-        $this->taskCache->delete('tasks_all');
 
         return $this->json(TaskResponse::fromEntity($task), Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
-    public function updateTask(int $id, Request $request): JsonResponse
+    public function updateTask(int $id, #[MapRequestPayload] UpdateTaskRequest $dto): JsonResponse
     {
         $task = $this->taskRepository->find($id);
 
@@ -150,45 +122,12 @@ class TaskController extends AbstractController
 
         $this->denyAccessUnlessGranted(TaskVoter::EDIT, $task);
 
-        $data = json_decode($request->getContent(), true);
-
-        $dto = UpdateTaskRequest::fromArray($data);
-
-        $errors = $this->validator->validate($dto);
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[$error->getPropertyPath()] = $error->getMessage();
-            }
-
-            throw new ValidationException($errorMessages);
+        $currentUser = $this->getUser();
+        if (!$currentUser instanceof User) {
+            throw new AccessDeniedException();
         }
 
-        if ($dto->projectId !== null) {
-            $project = $this->projectRepository->find($dto->projectId);
-            if (!$project) {
-                throw new ProjectNotFoundException();
-            }
-
-            $currentUser = $this->getUser();
-            if (!$currentUser instanceof User) {
-                throw new AccessDeniedException();
-            }
-
-            if ($currentUser->getId() !== $project->getOwner()->getId()) {
-                throw new AccessDeniedException();
-            }
-        }
-
-        $task = $this->taskService->updateTask($task, $dto);
-
-        // Invalidate cache
-        $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
-        if ($task->getAssignee()) {
-            $this->taskCache->delete('tasks_user_' . $task->getAssigneeId());
-        }
-        $this->taskCache->delete('tasks_all');
-        $this->taskCache->delete('task_' . $task->getId());
+        $task = $this->taskService->updateTask($id, $dto, $currentUser);
 
         return $this->json(TaskResponse::fromEntity($task));
     }
@@ -205,14 +144,6 @@ class TaskController extends AbstractController
         $this->denyAccessUnlessGranted(TaskVoter::DELETE, $task);
 
         $this->taskService->deleteTask($task);
-
-        // Invalidate cache
-        $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
-        if ($task->getAssignee()) {
-            $this->taskCache->delete('tasks_user_' . $task->getAssigneeId());
-        }
-        $this->taskCache->delete('tasks_all');
-        $this->taskCache->delete('task_' . $task->getId());
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
