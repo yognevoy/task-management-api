@@ -45,7 +45,7 @@ class TaskVoter extends Voter
     }
 
     /**
-     * Determines if the user can view the task.
+     * Checks if the current user can view the target task.
      *
      * @param Task $task
      * @param User $user
@@ -65,7 +65,7 @@ class TaskVoter extends Voter
     }
 
     /**
-     * Determines if the user can edit the task.
+     * Checks if the current user can edit the target task.
      *
      * @param Task $task
      * @param User $user
@@ -77,7 +77,7 @@ class TaskVoter extends Voter
     }
 
     /**
-     * Determines if the user can delete the task.
+     * Checks if the current user can delete the target task.
      *
      * @param Task $task
      * @param User $user
