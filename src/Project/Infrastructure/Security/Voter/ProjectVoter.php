@@ -46,21 +46,49 @@ class ProjectVoter extends Voter
         };
     }
 
+    /**
+     * Checks if the current user can view the target project.
+     *
+     * @param User $currentUser
+     * @param Project $project
+     * @return bool
+     */
     private function canView(User $currentUser, Project $project): bool
     {
         return true;
     }
 
+    /**
+     * Checks if the current user can edit the target project.
+     *
+     * @param User $currentUser
+     * @param Project $project
+     * @return bool
+     */
     private function canEdit(User $currentUser, Project $project): bool
     {
         return $project->getOwner() === $currentUser;
     }
 
+    /**
+     * Checks if the current user can delete the target project.
+     *
+     * @param User $currentUser
+     * @param Project $project
+     * @return bool
+     */
     private function canDelete(User $currentUser, Project $project): bool
     {
         return $project->getOwner() === $currentUser;
     }
 
+    /**
+     * Checks if the current user can view tasks of the target project.
+     *
+     * @param User $currentUser
+     * @param Project $project
+     * @return bool
+     */
     private function canViewTasks(User $currentUser, Project $project): bool
     {
         return $project->getOwner() === $currentUser;

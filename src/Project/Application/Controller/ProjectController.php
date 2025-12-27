@@ -25,6 +25,12 @@ class ProjectController extends AbstractController
     {
     }
 
+    /**
+     * Retrieves all projects.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     #[Route('', name: 'get_all', methods: ['GET'])]
     public function getAllProjects(Request $request): JsonResponse
     {
@@ -35,6 +41,12 @@ class ProjectController extends AbstractController
         );
     }
 
+    /**
+     * Retrieves a project by its ID.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
     public function getProject(int $id): JsonResponse
     {
@@ -52,6 +64,13 @@ class ProjectController extends AbstractController
         );
     }
 
+    /**
+     * Creates a new project.
+     *
+     * @param CreateProjectRequest $dto
+     * @return JsonResponse
+     * @throws \App\Shared\Domain\Exception\ValidationException
+     */
     #[Route('', name: 'create', methods: ['POST'])]
     public function createProject(#[MapRequestPayload] CreateProjectRequest $dto): JsonResponse
     {
@@ -63,6 +82,14 @@ class ProjectController extends AbstractController
         );
     }
 
+    /**
+     * Updates an existing project.
+     *
+     * @param int $id
+     * @param UpdateProjectRequest $dto
+     * @return JsonResponse
+     * @throws \App\Shared\Domain\Exception\ValidationException
+     */
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
     public function updateProject(int $id, #[MapRequestPayload] UpdateProjectRequest $dto): JsonResponse
     {
@@ -81,6 +108,12 @@ class ProjectController extends AbstractController
         );
     }
 
+    /**
+     * Deletes an existing project.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
     public function deleteProject(int $id): JsonResponse
     {
@@ -97,6 +130,12 @@ class ProjectController extends AbstractController
         return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 
+    /**
+     * Retrieves tasks for a given project.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
     #[Route('/{id}/tasks', name: 'get_project_tasks', methods: ['GET'])]
     public function getProjectTasks(int $id): JsonResponse
     {

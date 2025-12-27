@@ -32,6 +32,15 @@ class ProjectService
     ) {
     }
 
+    /**
+     * Creates a new project.
+     *
+     * @param CreateProjectRequest $dto
+     * @param User|null $currentUser
+     * @return ProjectResponse
+     * @throws \App\Shared\Domain\Exception\ValidationException
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function createProject(CreateProjectRequest $dto, ?User $currentUser = null): ProjectResponse
     {
         if (!$currentUser instanceof User) {
@@ -64,6 +73,16 @@ class ProjectService
         return ProjectResponse::fromEntity($project);
     }
 
+    /**
+     * Updates an existing project.
+     *
+     * @param int $id
+     * @param UpdateProjectRequest $dto
+     * @param User|null $currentUser
+     * @return ProjectResponse
+     * @throws \App\Shared\Domain\Exception\ValidationException
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function updateProject(int $id, UpdateProjectRequest $dto, ?User $currentUser = null): ProjectResponse
     {
         $project = $this->projectRepository->find($id);
@@ -95,6 +114,13 @@ class ProjectService
         return ProjectResponse::fromEntity($project);
     }
 
+    /**
+     * Deletes an existing project.
+     *
+     * @param Project $project
+     * @return void
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function deleteProject(Project $project): void
     {
         $taskCount = $this->projectRepository->countTasks($project);
@@ -108,6 +134,13 @@ class ProjectService
         $this->invalidateCache($project);
     }
 
+    /**
+     * Retrieves all projects.
+     *
+     * @param int|null $ownerId
+     * @return ProjectListResponse
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function getAllProjects(?int $ownerId = null): ProjectListResponse
     {
         $cacheKey = $ownerId ? 'projects_user_' . $ownerId : 'projects_all';
@@ -128,6 +161,13 @@ class ProjectService
         });
     }
 
+    /**
+     * Retrieves a project by its ID.
+     *
+     * @param int $id
+     * @return ProjectResponse
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     public function getProjectById(int $id): ProjectResponse
     {
         $cacheKey = 'project_' . $id;
@@ -142,6 +182,12 @@ class ProjectService
         });
     }
 
+    /**
+     * Retrieves tasks for a given project.
+     *
+     * @param int $id
+     * @return TaskListResponse
+     */
     public function getProjectTasks(int $id): TaskListResponse
     {
         $project = $this->projectRepository->find($id);
@@ -154,6 +200,13 @@ class ProjectService
         return new TaskListResponse($tasks);
     }
 
+    /**
+     * Invalidates cache for a given project.
+     *
+     * @param Project $project
+     * @return void
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
     private function invalidateCache(Project $project): void
     {
         $this->projectCache->delete('project_' . $project->getId());
