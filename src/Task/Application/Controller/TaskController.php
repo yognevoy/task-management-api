@@ -15,6 +15,7 @@ use App\Task\Domain\Entity\Task;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\User\Domain\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,6 +31,7 @@ class TaskController extends AbstractController
         private TaskService                $taskService,
         private TaskRepositoryInterface    $taskRepository,
         private ProjectRepositoryInterface $projectRepository,
+        private EntityManagerInterface     $entityManager,
         private CacheInterface             $taskCache,
         private ValidatorInterface         $validator,
     )
