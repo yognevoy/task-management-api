@@ -2,7 +2,6 @@
 
 namespace App\User\Application\Service;
 
-use App\User\Domain\Enum\UserRole;
 use App\Shared\Domain\Exception\ValidationException;
 use App\User\Application\DTO\CreateUserRequest;
 use App\User\Application\DTO\UpdateUserRequest;
@@ -20,11 +19,12 @@ class UserService
 {
     public function __construct(
         private UserPasswordHasherInterface $passwordEncoder,
-        private EntityManagerInterface $entityManager,
-        private ValidatorInterface $validator,
-        private UserRepositoryInterface $userRepository,
-        private CacheInterface $userCache,
-    ) {
+        private EntityManagerInterface      $entityManager,
+        private ValidatorInterface          $validator,
+        private UserRepositoryInterface     $userRepository,
+        private CacheInterface              $userCache,
+    )
+    {
     }
 
     /**
@@ -40,15 +40,6 @@ class UserService
         $user->setEmail($dto->email);
         $user->setPassword($this->passwordEncoder->hashPassword($user, $dto->password));
         $user->setRoles($dto->roles);
-
-        $errors = $this->validator->validate($user);
-        if (count($errors) > 0) {
-            $messages = [];
-            foreach ($errors as $error) {
-                $messages[] = $error->getMessage();
-            }
-            throw new ValidationException($messages);
-        }
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
@@ -84,15 +75,6 @@ class UserService
 
         if ($dto->roles !== null) {
             $user->setRoles($dto->roles);
-        }
-
-        $errors = $this->validator->validate($user);
-        if (count($errors) > 0) {
-            $messages = [];
-            foreach ($errors as $error) {
-                $messages[] = $error->getMessage();
-            }
-            throw new ValidationException($messages);
         }
 
         $this->entityManager->flush();

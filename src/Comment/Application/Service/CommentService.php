@@ -11,7 +11,6 @@ use App\Comment\Domain\Exception\CommentNotFoundException;
 use App\Comment\Domain\Repository\CommentRepositoryInterface;
 use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Shared\Domain\Exception\ValidationException;
-use App\Task\Domain\Entity\Task;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\User\Domain\Entity\User;
@@ -25,12 +24,13 @@ class CommentService
 {
     public function __construct(
         private CommentRepositoryInterface $commentRepository,
-        private TaskRepositoryInterface $taskRepository,
-        private UserRepositoryInterface $userRepository,
-        private EntityManagerInterface $entityManager,
-        private ValidatorInterface $validator,
-        private CacheInterface $commentCache,
-    ) {
+        private TaskRepositoryInterface    $taskRepository,
+        private UserRepositoryInterface    $userRepository,
+        private EntityManagerInterface     $entityManager,
+        private ValidatorInterface         $validator,
+        private CacheInterface             $commentCache,
+    )
+    {
     }
 
     /**
@@ -56,15 +56,6 @@ class CommentService
         $comment->setContent($dto->content);
         $comment->setTask($task);
         $comment->setAuthor($currentUser);
-
-        $errors = $this->validator->validate($comment);
-        if (count($errors) > 0) {
-            $messages = [];
-            foreach ($errors as $error) {
-                $messages[] = $error->getMessage();
-            }
-            throw new ValidationException($messages);
-        }
 
         $this->entityManager->persist($comment);
         $this->entityManager->flush();
@@ -92,15 +83,6 @@ class CommentService
 
         if ($dto->content !== null) {
             $comment->setContent($dto->content);
-        }
-
-        $errors = $this->validator->validate($comment);
-        if (count($errors) > 0) {
-            $messages = [];
-            foreach ($errors as $error) {
-                $messages[] = $error->getMessage();
-            }
-            throw new ValidationException($messages);
         }
 
         $this->entityManager->flush();
@@ -140,8 +122,8 @@ class CommentService
         }
 
         $cacheKey = $taskId ? 'comments_task_' . $taskId :
-                   ($authorId ? 'comments_author_' . $authorId :
-                   ($currentUser->isAdmin() ? 'comments_all' : 'comments_user_' . $currentUser->getId()));
+            ($authorId ? 'comments_author_' . $authorId :
+                ($currentUser->isAdmin() ? 'comments_all' : 'comments_user_' . $currentUser->getId()));
 
         return $this->commentCache->get($cacheKey, function () use ($taskId, $authorId, $currentUser) {
             if ($taskId !== null) {

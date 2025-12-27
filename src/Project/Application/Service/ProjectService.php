@@ -24,12 +24,13 @@ class ProjectService
 {
     public function __construct(
         private ProjectRepositoryInterface $projectRepository,
-        private TaskRepositoryInterface $taskRepository,
-        private UserRepositoryInterface $userRepository,
-        private EntityManagerInterface $entityManager,
-        private ValidatorInterface $validator,
-        private CacheInterface $projectCache,
-    ) {
+        private TaskRepositoryInterface    $taskRepository,
+        private UserRepositoryInterface    $userRepository,
+        private EntityManagerInterface     $entityManager,
+        private ValidatorInterface         $validator,
+        private CacheInterface             $projectCache,
+    )
+    {
     }
 
     /**
@@ -55,15 +56,6 @@ class ProjectService
         }
 
         $project->setOwner($currentUser);
-
-        $errors = $this->validator->validate($project);
-        if (count($errors) > 0) {
-            $messages = [];
-            foreach ($errors as $error) {
-                $messages[] = $error->getMessage();
-            }
-            throw new \App\Shared\Domain\Exception\ValidationException($messages);
-        }
 
         $this->entityManager->persist($project);
         $this->entityManager->flush();
@@ -96,15 +88,6 @@ class ProjectService
 
         if ($dto->description !== null) {
             $project->setDescription($dto->description);
-        }
-
-        $errors = $this->validator->validate($project);
-        if (count($errors) > 0) {
-            $messages = [];
-            foreach ($errors as $error) {
-                $messages[] = $error->getMessage();
-            }
-            throw new \App\Shared\Domain\Exception\ValidationException($messages);
         }
 
         $this->entityManager->flush();
