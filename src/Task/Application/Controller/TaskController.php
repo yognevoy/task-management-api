@@ -4,6 +4,10 @@ namespace App\Task\Application\Controller;
 
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Shared\Domain\Exception\AccessDeniedException;
+use App\Shared\Domain\Exception\ValidationException;
+use App\Task\Application\DTO\CreateTaskRequest;
+use App\Task\Application\DTO\TaskResponse;
+use App\Task\Application\DTO\UpdateTaskRequest;
 use App\Task\Application\Security\Voter\TaskVoter;
 use App\Task\Domain\Entity\Task;
 use App\Task\Domain\Enum\TaskPriority;
@@ -21,6 +25,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 
 #[Route('/api/tasks', name: 'api_tasks_')]
@@ -32,6 +37,7 @@ class TaskController extends AbstractController
         private ProjectRepositoryInterface $projectRepository,
         private EntityManagerInterface $entityManager,
         private CacheInterface $taskCache,
+        private ValidatorInterface $validator,
     ) {}
 
     #[Route('', name: 'get_all', methods: ['GET'])]
@@ -48,10 +54,10 @@ class TaskController extends AbstractController
             $cacheKey = 'tasks_all';
         }
 
-        $tasks = $this->taskCache->get($cacheKey, function () use ($currentUser) {
+        $taskResponses = $this->taskCache->get($cacheKey, function () use ($currentUser) {
             if (!$currentUser->isAdmin()) {
                 $qb = $this->entityManager->createQueryBuilder();
-                return $qb
+                $tasks = $qb
                     ->select('t')
                     ->from(Task::class, 't')
                     ->leftJoin('t.project', 'p')
@@ -60,12 +66,17 @@ class TaskController extends AbstractController
                     ->orderBy('t.id', 'ASC')
                     ->getQuery()
                     ->getResult();
+            } else {
+                $tasks = $this->taskRepository->findAll();
             }
 
-            return $this->taskRepository->findAll();
+            return array_map(
+                fn(Task $task) => TaskResponse::fromEntity($task),
+                $tasks
+            );
         });
 
-        return $this->json($tasks, context: ['groups' => 'task:read']);
+        return $this->json($taskResponses);
     }
 
     #[Route('/{id}', name: 'get_one', methods: ['GET'])]
@@ -73,20 +84,19 @@ class TaskController extends AbstractController
     {
         $cacheKey = 'task_' . $id;
 
-        $task = $this->taskCache->get($cacheKey, function () use ($id) {
-            // TODO: cache DTO
+        $taskResponse = $this->taskCache->get($cacheKey, function () use ($id) {
             $task = $this->taskRepository->find($id);
 
             if (!$task) {
                 throw new TaskNotFoundException();
             }
 
-            return $task;
+            $this->denyAccessUnlessGranted(TaskVoter::VIEW, $task);
+
+            return TaskResponse::fromEntity($task);
         });
 
-        $this->denyAccessUnlessGranted(TaskVoter::VIEW, $task);
-
-        return $this->json($task, context: ['groups' => 'task:read']);
+        return $this->json($taskResponse);
     }
 
     #[Route('', name: 'create', methods: ['POST'])]
@@ -94,55 +104,46 @@ class TaskController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        if (empty($data['title'])) {
-            return $this->json(['error' => 'Title is required'], Response::HTTP_BAD_REQUEST);
+        $dto = CreateTaskRequest::fromArray($data);
+
+        $errors = $this->validator->validate($dto);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[$error->getPropertyPath()] = $error->getMessage();
+            }
+
+            throw new ValidationException($errorMessages);
         }
 
         $task = new Task();
-        $task->setTitle($data['title']);
+        $task->setTitle($dto->title);
 
-        if (isset($data['description'])) {
-            $task->setDescription($data['description']);
+        if ($dto->description !== null) {
+            $task->setDescription($dto->description);
         }
 
-        if (!empty($data['status'])) {
-            try {
-                $status = TaskStatus::from($data['status']);
-                $task->setStatus($status);
-            } catch (\ValueError $e) {
-                return $this->json(['error' => 'Invalid status value'], Response::HTTP_BAD_REQUEST);
-            }
+        if ($dto->status !== null) {
+            $status = TaskStatus::from($dto->status);
+            $task->setStatus($status);
         }
 
-        if (!empty($data['type'])) {
-            try {
-                $type = TaskType::from($data['type']);
-                $task->setType($type);
-            } catch (\ValueError $e) {
-                return $this->json(['error' => 'Invalid type value'], Response::HTTP_BAD_REQUEST);
-            }
+        if ($dto->type !== null) {
+            $type = TaskType::from($dto->type);
+            $task->setType($type);
         }
 
-        if (!empty($data['priority'])) {
-            try {
-                $priority = TaskPriority::from($data['priority']);
-                $task->setPriority($priority);
-            } catch (\ValueError $e) {
-                return $this->json(['error' => 'Invalid priority value'], Response::HTTP_BAD_REQUEST);
-            }
+        if ($dto->priority !== null) {
+            $priority = TaskPriority::from($dto->priority);
+            $task->setPriority($priority);
         }
 
-        if (isset($data['dueDate'])) {
-            try {
-                $dueDate = new \DateTimeImmutable($data['dueDate']);
-                $task->setDueDate($dueDate);
-            } catch (\Exception $e) {
-                return $this->json(['error' => 'Invalid due date format'], Response::HTTP_BAD_REQUEST);
-            }
+        if ($dto->dueDate !== null) {
+            $task->setDueDate(new \DateTimeImmutable($dto->dueDate));
         }
 
-        if (!empty($data['parentId'])) {
-            $parentTask = $this->taskRepository->find($data['parentId']);
+        if ($dto->parentId !== null) {
+            $parentTask = $this->taskRepository->find($dto->parentId);
 
             if (!$parentTask) {
                 throw new ParentTaskNotFoundException();
@@ -150,8 +151,8 @@ class TaskController extends AbstractController
             $task->setParent($parentTask);
         }
 
-        if (!empty($data['projectId'])) {
-            $project = $this->projectRepository->find($data['projectId']);
+        if ($dto->projectId !== null) {
+            $project = $this->projectRepository->find($dto->projectId);
             if (!$project) {
                 return $this->json(['error' => 'Project not found'], Response::HTTP_BAD_REQUEST);
             }
@@ -166,8 +167,8 @@ class TaskController extends AbstractController
             $task->setProject($project);
         }
 
-        if (!empty($data['assigneeId'])) {
-            $assignee = $this->userRepository->find($data['assigneeId']);
+        if ($dto->assigneeId !== null) {
+            $assignee = $this->userRepository->find($dto->assigneeId);
 
             if (!$assignee) {
                 return $this->json(['error' => 'Assignee not found'], Response::HTTP_BAD_REQUEST);
@@ -191,7 +192,7 @@ class TaskController extends AbstractController
         $this->taskCache->delete('tasks_user_' . $currentUser->getId());
         $this->taskCache->delete('tasks_all');
 
-        return $this->json($task, Response::HTTP_CREATED, context: ['groups' => 'task:read']);
+        return $this->json(TaskResponse::fromEntity($task), Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'update', methods: ['PUT'])]
@@ -207,110 +208,97 @@ class TaskController extends AbstractController
 
         $data = json_decode($request->getContent(), true);
 
-        if (isset($data['title'])) {
-            $task->setTitle($data['title']);
-        }
+        $dto = UpdateTaskRequest::fromArray($data);
 
-        if (isset($data['description'])) {
-            $task->setDescription($data['description']);
-        }
-
-        if (!empty($data['status'])) {
-            try {
-                $status = TaskStatus::from($data['status']);
-                $task->setStatus($status);
-            } catch (\ValueError $e) {
-                return $this->json(['error' => 'Invalid status value'], Response::HTTP_BAD_REQUEST);
+        $errors = $this->validator->validate($dto);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[$error->getPropertyPath()] = $error->getMessage();
             }
+
+            throw new ValidationException($errorMessages);
         }
 
-        if (!empty($data['type'])) {
-            try {
-                $type = TaskType::from($data['type']);
-                $task->setType($type);
-            } catch (\ValueError $e) {
-                return $this->json(['error' => 'Invalid type value'], Response::HTTP_BAD_REQUEST);
-            }
+        if ($dto->title !== null) {
+            $task->setTitle($dto->title);
         }
 
-        if (!empty($data['priority'])) {
-            try {
-                $priority = TaskPriority::from($data['priority']);
-                $task->setPriority($priority);
-            } catch (\ValueError $e) {
-                return $this->json(['error' => 'Invalid priority value'], Response::HTTP_BAD_REQUEST);
-            }
+        if ($dto->description !== null) {
+            $task->setDescription($dto->description);
         }
 
-        if (array_key_exists('dueDate', $data)) {
-            if ($data['dueDate'] === null || $data['dueDate'] === '') {
-                $task->setDueDate(null);
-            } else {
-                try {
-                    $dueDate = new \DateTimeImmutable($data['dueDate']);
-                    $task->setDueDate($dueDate);
-                } catch (\Exception $e) {
-                    return $this->json(['error' => 'Invalid due date format'], Response::HTTP_BAD_REQUEST);
-                }
-            }
+        if ($dto->status !== null) {
+            $status = TaskStatus::from($dto->status);
+            $task->setStatus($status);
         }
 
-        if (array_key_exists('parentId', $data)) {
-            if ($data['parentId'] === null || $data['parentId'] === 0) {
-                $task->setParent(null);
-            } else {
-                $parentTask = $this->taskRepository->find($data['parentId']);
-
-                if (!$parentTask) {
-                    throw new ParentTaskNotFoundException();
-                }
-
-                if ($parentTask->getId() === $task->getId()) {
-                    throw new CircularTaskReferenceException();
-                }
-
-                $task->setParent($parentTask);
-            }
+        if ($dto->type !== null) {
+            $type = TaskType::from($dto->type);
+            $task->setType($type);
         }
 
-        if (array_key_exists('projectId', $data)) {
-            if ($data['projectId'] === null || $data['projectId'] === 0) {
-                $task->setProject(null);
-            } else {
-                $project = $this->projectRepository->find($data['projectId']);
-
-                if (!$project) {
-                    return $this->json(['error' => 'Project not found'], Response::HTTP_BAD_REQUEST);
-                }
-
-                $currentUser = $this->getUser();
-
-                // Check if the user owns the project
-                if (!$currentUser instanceof User || $currentUser->getId() !== $project->getOwner()->getId()) {
-                    throw new AccessDeniedException();
-                }
-
-                $task->setProject($project);
-            }
+        if ($dto->priority !== null) {
+            $priority = TaskPriority::from($dto->priority);
+            $task->setPriority($priority);
         }
 
-        if (array_key_exists('assigneeId', $data)) {
-            if ($data['assigneeId'] === null || $data['assigneeId'] === 0) {
-                $task->setAssignee(null);
-            } else {
-                $assignee = $this->userRepository->find($data['assigneeId']);
+        if ($dto->dueDate !== null) {
+            $task->setDueDate(new \DateTimeImmutable($dto->dueDate));
+        } elseif ($dto->dueDate === null) {
+            $task->setDueDate(null);
+        }
 
-                if (!$assignee) {
-                    return $this->json(['error' => 'Assignee not found'], Response::HTTP_BAD_REQUEST);
-                }
+        if ($dto->parentId !== null) {
+            $parentTask = $this->taskRepository->find($dto->parentId);
 
-                $task->setAssignee($assignee);
+            if (!$parentTask) {
+                throw new ParentTaskNotFoundException();
             }
+
+            if ($parentTask->getId() === $task->getId()) {
+                throw new CircularTaskReferenceException();
+            }
+
+            $task->setParent($parentTask);
+        } elseif ($dto->parentId === 0) {
+            $task->setParent(null);
+        }
+
+        if ($dto->projectId !== null) {
+            $project = $this->projectRepository->find($dto->projectId);
+
+            if (!$project) {
+                return $this->json(['error' => 'Project not found'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $currentUser = $this->getUser();
+
+            // Check if the user owns the project
+            if (!$currentUser instanceof User || $currentUser->getId() !== $project->getOwner()->getId()) {
+                throw new AccessDeniedException();
+            }
+
+            $task->setProject($project);
+        } elseif ($dto->projectId === 0) {
+            $task->setProject(null);
+        }
+
+        if ($dto->assigneeId !== null) {
+            $assignee = $this->userRepository->find($dto->assigneeId);
+
+            if (!$assignee) {
+                return $this->json(['error' => 'Assignee not found'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $task->setAssignee($assignee);
+        } elseif ($dto->assigneeId === 0) {
+            $task->setAssignee(null);
         }
 
         $this->entityManager->flush();
 
-        // Invalidate cache
+        // Invalidate cache - теперь нужно очищать DTO кеши
         $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
         if ($task->getAssignee()) {
             $this->taskCache->delete('tasks_user_' . $task->getAssigneeId());
@@ -318,7 +306,7 @@ class TaskController extends AbstractController
         $this->taskCache->delete('tasks_all');
         $this->taskCache->delete('task_' . $task->getId());
 
-        return $this->json($task, context: ['groups' => 'task:read']);
+        return $this->json(TaskResponse::fromEntity($task));
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
@@ -359,6 +347,11 @@ class TaskController extends AbstractController
 
         $subtasks = $this->taskRepository->findByParent($task);
 
-        return $this->json($subtasks, context: ['groups' => 'task:read']);
+        $subtaskResponses = array_map(
+            fn(Task $subtask) => TaskResponse::fromEntity($subtask),
+            $subtasks
+        );
+
+        return $this->json($subtaskResponses);
     }
 }

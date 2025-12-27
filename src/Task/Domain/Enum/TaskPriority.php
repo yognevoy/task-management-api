@@ -8,4 +8,9 @@ enum TaskPriority: string
     case MEDIUM = 'medium';
     case HIGH = 'high';
     case CRITICAL = 'critical';
+
+    public static function toValues(): array
+    {
+        return array_column(self::cases(), 'value');
+    }
 }
