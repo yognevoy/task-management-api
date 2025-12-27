@@ -10,18 +10,11 @@ use App\Task\Application\DTO\CreateTaskRequest;
 use App\Task\Application\DTO\TaskResponse;
 use App\Task\Application\DTO\UpdateTaskRequest;
 use App\Task\Application\Security\Voter\TaskVoter;
+use App\Task\Application\Service\TaskService;
 use App\Task\Domain\Entity\Task;
-use App\Task\Domain\Enum\TaskPriority;
-use App\Task\Domain\Enum\TaskStatus;
-use App\Task\Domain\Enum\TaskType;
-use App\Task\Domain\Exception\CircularTaskReferenceException;
-use App\Task\Domain\Exception\ParentTaskNotFoundException;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\User\Domain\Entity\User;
-use App\User\Domain\Exception\UserNotFoundException;
-use App\User\Domain\Repository\UserRepositoryInterface;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,13 +27,14 @@ use Symfony\Contracts\Cache\CacheInterface;
 class TaskController extends AbstractController
 {
     public function __construct(
-        private TaskRepositoryInterface $taskRepository,
-        private UserRepositoryInterface $userRepository,
+        private TaskService                $taskService,
+        private TaskRepositoryInterface    $taskRepository,
         private ProjectRepositoryInterface $projectRepository,
-        private EntityManagerInterface $entityManager,
-        private CacheInterface $taskCache,
-        private ValidatorInterface $validator,
-    ) {}
+        private CacheInterface             $taskCache,
+        private ValidatorInterface         $validator,
+    )
+    {
+    }
 
     #[Route('', name: 'get_all', methods: ['GET'])]
     public function getAllTasks(Request $request): JsonResponse
@@ -118,39 +112,9 @@ class TaskController extends AbstractController
             throw new ValidationException($errorMessages);
         }
 
-        $task = new Task();
-        $task->setTitle($dto->title);
-
-        if ($dto->description !== null) {
-            $task->setDescription($dto->description);
-        }
-
-        if ($dto->status !== null) {
-            $status = TaskStatus::from($dto->status);
-            $task->setStatus($status);
-        }
-
-        if ($dto->type !== null) {
-            $type = TaskType::from($dto->type);
-            $task->setType($type);
-        }
-
-        if ($dto->priority !== null) {
-            $priority = TaskPriority::from($dto->priority);
-            $task->setPriority($priority);
-        }
-
-        if ($dto->dueDate !== null) {
-            $task->setDueDate(new \DateTimeImmutable($dto->dueDate));
-        }
-
-        if ($dto->parentId !== null) {
-            $parentTask = $this->taskRepository->find($dto->parentId);
-
-            if (!$parentTask) {
-                throw new ParentTaskNotFoundException();
-            }
-            $task->setParent($parentTask);
+        $currentUser = $this->getUser();
+        if (!$currentUser instanceof User) {
+            throw new AccessDeniedException();
         }
 
         if ($dto->projectId !== null) {
@@ -159,36 +123,12 @@ class TaskController extends AbstractController
                 throw new ProjectNotFoundException();
             }
 
-            $currentUser = $this->getUser();
-
-            // Check if the user owns the project
-            if (!$currentUser instanceof User || $currentUser->getId() !== $project->getOwner()->getId()) {
+            if ($currentUser->getId() !== $project->getOwner()->getId()) {
                 throw new AccessDeniedException();
             }
-
-            $task->setProject($project);
         }
 
-        if ($dto->assigneeId !== null) {
-            $assignee = $this->userRepository->find($dto->assigneeId);
-
-            if (!$assignee) {
-                throw new UserNotFoundException();
-            }
-
-            $task->setAssignee($assignee);
-        }
-
-        $currentUser = $this->getUser();
-
-        if (!$currentUser instanceof User) {
-            throw new AccessDeniedException();
-        }
-
-        $task->setOwner($currentUser);
-
-        $this->entityManager->persist($task);
-        $this->entityManager->flush();
+        $task = $this->taskService->createTask($dto, $currentUser);
 
         // Invalidate cache
         $this->taskCache->delete('tasks_user_' . $currentUser->getId());
@@ -222,85 +162,25 @@ class TaskController extends AbstractController
             throw new ValidationException($errorMessages);
         }
 
-        if ($dto->title !== null) {
-            $task->setTitle($dto->title);
-        }
-
-        if ($dto->description !== null) {
-            $task->setDescription($dto->description);
-        }
-
-        if ($dto->status !== null) {
-            $status = TaskStatus::from($dto->status);
-            $task->setStatus($status);
-        }
-
-        if ($dto->type !== null) {
-            $type = TaskType::from($dto->type);
-            $task->setType($type);
-        }
-
-        if ($dto->priority !== null) {
-            $priority = TaskPriority::from($dto->priority);
-            $task->setPriority($priority);
-        }
-
-        if ($dto->dueDate !== null) {
-            $task->setDueDate(new \DateTimeImmutable($dto->dueDate));
-        } elseif ($dto->dueDate === null) {
-            $task->setDueDate(null);
-        }
-
-        if ($dto->parentId !== null) {
-            $parentTask = $this->taskRepository->find($dto->parentId);
-
-            if (!$parentTask) {
-                throw new ParentTaskNotFoundException();
-            }
-
-            if ($parentTask->getId() === $task->getId()) {
-                throw new CircularTaskReferenceException();
-            }
-
-            $task->setParent($parentTask);
-        } elseif ($dto->parentId === 0) {
-            $task->setParent(null);
-        }
-
         if ($dto->projectId !== null) {
             $project = $this->projectRepository->find($dto->projectId);
-
             if (!$project) {
                 throw new ProjectNotFoundException();
             }
 
             $currentUser = $this->getUser();
-
-            // Check if the user owns the project
-            if (!$currentUser instanceof User || $currentUser->getId() !== $project->getOwner()->getId()) {
+            if (!$currentUser instanceof User) {
                 throw new AccessDeniedException();
             }
 
-            $task->setProject($project);
-        } elseif ($dto->projectId === 0) {
-            $task->setProject(null);
-        }
-
-        if ($dto->assigneeId !== null) {
-            $assignee = $this->userRepository->find($dto->assigneeId);
-
-            if (!$assignee) {
-                throw new UserNotFoundException();
+            if ($currentUser->getId() !== $project->getOwner()->getId()) {
+                throw new AccessDeniedException();
             }
-
-            $task->setAssignee($assignee);
-        } elseif ($dto->assigneeId === 0) {
-            $task->setAssignee(null);
         }
 
-        $this->entityManager->flush();
+        $task = $this->taskService->updateTask($task, $dto);
 
-        // Invalidate cache - теперь нужно очищать DTO кеши
+        // Invalidate cache
         $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
         if ($task->getAssignee()) {
             $this->taskCache->delete('tasks_user_' . $task->getAssigneeId());
@@ -322,8 +202,7 @@ class TaskController extends AbstractController
 
         $this->denyAccessUnlessGranted(TaskVoter::DELETE, $task);
 
-        $this->entityManager->remove($task);
-        $this->entityManager->flush();
+        $this->taskService->deleteTask($task);
 
         // Invalidate cache
         $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
