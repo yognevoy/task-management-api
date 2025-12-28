@@ -18,6 +18,7 @@ class UpdateTaskCommand implements CommandInterface
         public readonly ?int    $parentId,
         public readonly ?int    $projectId,
         public readonly ?int    $assigneeId,
+        public readonly ?int    $ownerId,
         public readonly ?User   $currentUser
     )
     {

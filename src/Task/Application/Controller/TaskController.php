@@ -82,6 +82,7 @@ class TaskController extends AbstractController
             $dto->parentId,
             $dto->projectId,
             $dto->assigneeId,
+            $dto->ownerId,
             $this->getUser()
         );
 

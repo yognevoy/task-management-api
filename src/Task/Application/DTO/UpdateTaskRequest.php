@@ -48,4 +48,9 @@ class UpdateTaskRequest
     #[Assert\Type("integer", message: 'Assignee ID must be an integer')]
     #[Assert\PositiveOrZero(message: 'Assignee ID must be a positive integer or zero')]
     public ?int $assigneeId = null;
+
+    #[Assert\Optional]
+    #[Assert\Type("integer", message: 'Owner ID must be an integer')]
+    #[Assert\Positive(message: 'Owner ID must be a positive integer')]
+    public ?int $ownerId = null;
 }

@@ -123,6 +123,15 @@ class UpdateTaskCommandHandler implements CommandHandlerInterface
             }
         }
 
+        if ($command->ownerId !== null) {
+            $newOwner = $this->userRepository->find($command->ownerId);
+            if (!$newOwner) {
+                throw new UserNotFoundException();
+            }
+
+            $task->setOwner($newOwner);
+        }
+
         $this->entityManager->flush();
 
         $this->taskCacheManager->invalidateCache($task);
