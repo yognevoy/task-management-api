@@ -2,12 +2,19 @@
 
 namespace App\Project\Application\Controller;
 
+use App\Project\Application\Command\CreateProject\CreateProjectCommand;
+use App\Project\Application\Command\DeleteProject\DeleteProjectCommand;
+use App\Project\Application\Command\UpdateProject\UpdateProjectCommand;
 use App\Project\Application\DTO\CreateProjectRequest;
 use App\Project\Application\DTO\UpdateProjectRequest;
-use App\Project\Application\Service\ProjectService;
+use App\Project\Application\Query\GetAllProjects\GetAllProjectsQuery;
+use App\Project\Application\Query\GetProject\GetProjectQuery;
+use App\Project\Application\Query\GetProjectTasks\GetProjectTasksQuery;
 use App\Project\Domain\Exception\ProjectNotFoundException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Project\Infrastructure\Security\Voter\ProjectVoter;
+use App\Shared\Application\Command\CommandBusInterface;
+use App\Shared\Application\Query\QueryBusInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,49 +26,11 @@ use Symfony\Component\Routing\Attribute\Route;
 class ProjectController extends AbstractController
 {
     public function __construct(
-        private ProjectService             $projectService,
+        private CommandBusInterface        $commandBus,
+        private QueryBusInterface          $queryBus,
         private ProjectRepositoryInterface $projectRepository,
     )
     {
-    }
-
-    /**
-     * Retrieves all projects.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
-    #[Route('', name: 'get_all', methods: ['GET'])]
-    public function getAllProjects(Request $request): JsonResponse
-    {
-        $ownerId = $request->query->getInt('owner');
-
-        return $this->json(
-            $this->projectService->getAllProjects($ownerId)
-        );
-    }
-
-    /**
-     * Retrieves a project by its ID.
-     *
-     * @param int $id
-     * @return JsonResponse
-     */
-    #[Route('/{id}', name: 'get_one', methods: ['GET'])]
-    public function getProject(int $id): JsonResponse
-    {
-        // TODO: remove duplicated request
-        $project = $this->projectRepository->find($id);
-
-        if (!$project) {
-            throw new ProjectNotFoundException();
-        }
-
-        $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $project);
-
-        return $this->json(
-            $this->projectService->getProjectById($id)
-        );
     }
 
     /**
@@ -73,12 +42,15 @@ class ProjectController extends AbstractController
     #[Route('', name: 'create', methods: ['POST'])]
     public function createProject(#[MapRequestPayload] CreateProjectRequest $dto): JsonResponse
     {
-        return $this->json(
-            $this->projectService->createProject(
-                $dto, $this->getUser()
-            ),
-            Response::HTTP_CREATED
+        $command = new CreateProjectCommand(
+            $dto->title,
+            $dto->description,
+            $this->getUser()
         );
+
+        $result = $this->commandBus->dispatch($command);
+
+        return $this->json($result, Response::HTTP_CREATED);
     }
 
     /**
@@ -92,18 +64,21 @@ class ProjectController extends AbstractController
     public function updateProject(int $id, #[MapRequestPayload] UpdateProjectRequest $dto): JsonResponse
     {
         $project = $this->projectRepository->find($id);
-
         if (!$project) {
             throw new ProjectNotFoundException();
         }
 
         $this->denyAccessUnlessGranted(ProjectVoter::EDIT, $project);
 
-        return $this->json(
-            $this->projectService->updateProject(
-                $id, $dto, $this->getUser()
-            )
+        $command = new UpdateProjectCommand(
+            $id,
+            $dto->title,
+            $dto->description
         );
+
+        $result = $this->commandBus->dispatch($command);
+
+        return $this->json($result);
     }
 
     /**
@@ -116,16 +91,54 @@ class ProjectController extends AbstractController
     public function deleteProject(int $id): JsonResponse
     {
         $project = $this->projectRepository->find($id);
-
         if (!$project) {
             throw new ProjectNotFoundException();
         }
 
         $this->denyAccessUnlessGranted(ProjectVoter::DELETE, $project);
 
-        $this->projectService->deleteProject($project);
+        $command = new DeleteProjectCommand($id);
+        $this->commandBus->dispatch($command);
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Retrieves all projects.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    #[Route('', name: 'get_all', methods: ['GET'])]
+    public function getAllProjects(Request $request): JsonResponse
+    {
+        $ownerId = $request->query->get('owner');
+        $query = new GetAllProjectsQuery($ownerId);
+        $result = $this->queryBus->query($query);
+
+        return $this->json($result);
+    }
+
+    /**
+     * Retrieves a project by its ID.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
+    #[Route('/{id}', name: 'get_one', methods: ['GET'])]
+    public function getProject(int $id): JsonResponse
+    {
+        $project = $this->projectRepository->find($id);
+        if (!$project) {
+            throw new ProjectNotFoundException();
+        }
+
+        $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $project);
+
+        $query = new GetProjectQuery($id);
+        $result = $this->queryBus->query($query);
+
+        return $this->json($result);
     }
 
     /**
@@ -138,15 +151,15 @@ class ProjectController extends AbstractController
     public function getProjectTasks(int $id): JsonResponse
     {
         $project = $this->projectRepository->find($id);
-
         if (!$project) {
             throw new ProjectNotFoundException();
         }
 
         $this->denyAccessUnlessGranted(ProjectVoter::VIEW_TASKS, $project);
 
-        return $this->json(
-            $this->projectService->getProjectTasks($id)
-        );
+        $query = new GetProjectTasksQuery($id);
+        $result = $this->queryBus->query($query);
+
+        return $this->json($result);
     }
 }
