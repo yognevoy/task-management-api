@@ -13,11 +13,11 @@ use App\Task\Domain\Enum\TaskStatus;
 use App\Task\Domain\Enum\TaskType;
 use App\Task\Domain\Exception\ParentTaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
+use App\Task\Infrastructure\Cache\TaskCacheManager;
 use App\User\Domain\Entity\User;
 use App\User\Domain\Exception\UserNotFoundException;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Contracts\Cache\CacheInterface;
 
 class CreateTaskCommandHandler implements CommandHandlerInterface
 {
@@ -26,7 +26,7 @@ class CreateTaskCommandHandler implements CommandHandlerInterface
         private UserRepositoryInterface    $userRepository,
         private ProjectRepositoryInterface $projectRepository,
         private EntityManagerInterface     $entityManager,
-        private CacheInterface             $taskCache,
+        private TaskCacheManager           $taskCacheManager,
     )
     {
     }
@@ -101,23 +101,8 @@ class CreateTaskCommandHandler implements CommandHandlerInterface
         $this->entityManager->persist($task);
         $this->entityManager->flush();
 
-        $this->invalidateCache($task);
+        $this->taskCacheManager->invalidateCache($task);
 
         return TaskResponse::fromEntity($task);
-    }
-
-    private function invalidateCache(Task $task): void
-    {
-        $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
-        if ($task->getAssignee()) {
-            $this->taskCache->delete('tasks_user_' . $task->getAssigneeId());
-        }
-        $this->taskCache->delete('tasks_all');
-        $this->taskCache->delete('task_' . $task->getId());
-        $this->taskCache->delete('subtasks_' . $task->getId());
-
-        if ($task->getParentId()) {
-            $this->taskCache->delete('subtasks_' . $task->getParentId());
-        }
     }
 }
