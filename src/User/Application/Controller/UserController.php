@@ -9,6 +9,7 @@ use App\User\Application\Command\UpdateUser\UpdateUserCommand;
 use App\User\Application\DTO\UpdateUserRequest;
 use App\User\Application\Query\GetAllUsers\GetAllUsersQuery;
 use App\User\Application\Query\GetUser\GetUserQuery;
+use App\User\Domain\Exception\UserNotFoundException;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use App\User\Infrastructure\Security\Voter\UserVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -40,7 +41,7 @@ class UserController extends AbstractController
     {
         $user = $this->userRepository->find($id);
         if (!$user) {
-            throw $this->createNotFoundException('User not found');
+            throw new UserNotFoundException();
         }
 
         $this->denyAccessUnlessGranted(UserVoter::EDIT, $user);
@@ -68,7 +69,7 @@ class UserController extends AbstractController
     {
         $user = $this->userRepository->find($id);
         if (!$user) {
-            throw $this->createNotFoundException('User not found');
+            throw new UserNotFoundException();
         }
 
         $this->denyAccessUnlessGranted(UserVoter::DELETE, $user);
@@ -104,7 +105,7 @@ class UserController extends AbstractController
     {
         $user = $this->userRepository->find($id);
         if (!$user) {
-            throw $this->createNotFoundException('User not found');
+            throw new UserNotFoundException();
         }
 
         $this->denyAccessUnlessGranted(UserVoter::VIEW, $user);
