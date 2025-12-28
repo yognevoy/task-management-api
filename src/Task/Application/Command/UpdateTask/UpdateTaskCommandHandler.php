@@ -4,10 +4,9 @@ namespace App\Task\Application\Command\UpdateTask;
 
 use App\Project\Domain\Exception\ProjectNotFoundException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
-use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Shared\Application\Command\CommandHandlerInterface;
+use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Application\DTO\TaskResponse;
-use App\Task\Domain\Entity\Task;
 use App\Task\Domain\Enum\TaskPriority;
 use App\Task\Domain\Enum\TaskStatus;
 use App\Task\Domain\Enum\TaskType;
@@ -29,7 +28,9 @@ class UpdateTaskCommandHandler implements CommandHandlerInterface
         private ProjectRepositoryInterface $projectRepository,
         private EntityManagerInterface     $entityManager,
         private TaskCacheManager           $taskCacheManager,
-    ) {}
+    )
+    {
+    }
 
     public function __invoke(UpdateTaskCommand $command): TaskResponse
     {
@@ -68,52 +69,58 @@ class UpdateTaskCommandHandler implements CommandHandlerInterface
 
         if ($command->dueDate !== null) {
             $task->setDueDate(new \DateTimeImmutable($command->dueDate));
-        } elseif ($command->dueDate === null) {
+        } else {
             $task->setDueDate(null);
         }
 
         if ($command->parentId !== null) {
-            $parentTask = $this->taskRepository->find($command->parentId);
+            if ($command->parentId === 0) {
+                $task->setParent(null);
+            } else {
+                $parentTask = $this->taskRepository->find($command->parentId);
 
-            if (!$parentTask) {
-                throw new ParentTaskNotFoundException();
+                if (!$parentTask) {
+                    throw new ParentTaskNotFoundException();
+                }
+
+                if ($parentTask->getId() === $task->getId()) {
+                    throw new CircularTaskReferenceException();
+                }
+
+                $task->setParent($parentTask);
             }
-
-            if ($parentTask->getId() === $task->getId()) {
-                throw new CircularTaskReferenceException();
-            }
-
-            $task->setParent($parentTask);
-        } elseif ($command->parentId === 0) {
-            $task->setParent(null);
         }
 
         if ($command->projectId !== null) {
-            $project = $this->projectRepository->find($command->projectId);
+            if ($command->projectId === 0) {
+                $task->setProject(null);
+            } else {
+                $project = $this->projectRepository->find($command->projectId);
 
-            if (!$project) {
-                throw new ProjectNotFoundException();
+                if (!$project) {
+                    throw new ProjectNotFoundException();
+                }
+
+                if ($currentUser !== null && $currentUser->getId() !== $project->getOwnerId()) {
+                    throw new AccessDeniedException();
+                }
+
+                $task->setProject($project);
             }
-
-            if ($currentUser !== null && $currentUser->getId() !== $project->getOwnerId()) {
-                throw new AccessDeniedException();
-            }
-
-            $task->setProject($project);
-        } elseif ($command->projectId === 0) {
-            $task->setProject(null);
         }
 
         if ($command->assigneeId !== null) {
-            $assignee = $this->userRepository->find($command->assigneeId);
+            if ($command->assigneeId === 0) {
+                $task->setAssignee(null);
+            } else {
+                $assignee = $this->userRepository->find($command->assigneeId);
 
-            if (!$assignee) {
-                throw new UserNotFoundException();
+                if (!$assignee) {
+                    throw new UserNotFoundException();
+                }
+
+                $task->setAssignee($assignee);
             }
-
-            $task->setAssignee($assignee);
-        } elseif ($command->assigneeId === 0) {
-            $task->setAssignee(null);
         }
 
         $this->entityManager->flush();
