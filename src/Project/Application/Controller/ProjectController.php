@@ -73,7 +73,8 @@ class ProjectController extends AbstractController
         $command = new UpdateProjectCommand(
             $id,
             $dto->title,
-            $dto->description
+            $dto->description,
+            $dto->ownerId
         );
 
         $result = $this->commandBus->dispatch($command);

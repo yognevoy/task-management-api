@@ -10,6 +10,7 @@ class UpdateProjectCommand implements CommandInterface
         public readonly int     $id,
         public readonly ?string $title = null,
         public readonly ?string $description = null,
+        public readonly ?int    $ownerId = null,
     )
     {
     }
