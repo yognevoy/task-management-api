@@ -25,3 +25,26 @@ services:
     App\Shared\Infrastructure\EventListener\ExceptionEventListener:
         tags:
             - { name: kernel.event_listener, event: kernel.exception }
+
+    _instanceof:
+        # all services implementing the CommandHandlerInterface
+        # will be registered on the command.bus bus
+        App\Shared\Application\Command\CommandHandlerInterface:
+            tags:
+                - { name: messenger.message_handler, bus: command.bus }
+
+        # while those implementing QueryHandlerInterface will be
+        # registered on the query.bus bus
+        App\Shared\Application\Query\QueryHandlerInterface:
+            tags:
+                - { name: messenger.message_handler, bus: query.bus }
+
+    App\Shared\Application\Command\CommandBusInterface:
+        class: App\Shared\Infrastructure\Bus\CommandBus
+        arguments:
+            - '@command.bus'
+
+    App\Shared\Application\Query\QueryBusInterface:
+        class: App\Shared\Infrastructure\Bus\QueryBus
+        arguments:
+            - '@query.bus'
