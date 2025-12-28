@@ -2,8 +2,9 @@
 
 namespace App\User\Application\Controller;
 
+use App\Shared\Application\Command\CommandBusInterface;
+use App\User\Application\Command\RegisterUser\RegisterUserCommand;
 use App\User\Application\DTO\CreateUserRequest;
-use App\User\Application\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,7 +15,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class AuthController extends AbstractController
 {
     public function __construct(
-        private UserService $userService,
+        private CommandBusInterface $commandBus,
     )
     {
     }
@@ -28,17 +29,17 @@ class AuthController extends AbstractController
     #[Route('/register', name: 'api_register', methods: ['POST'])]
     public function register(#[MapRequestPayload] CreateUserRequest $dto): JsonResponse
     {
-        try {
-            $userId = $this->userService->registerUser($dto);
+        $command = new RegisterUserCommand(
+            $dto->email,
+            $dto->password,
+            $dto->roles ?? []
+        );
 
-            return $this->json([
-                'message' => 'User registered successfully',
-                'user_id' => $userId
-            ], Response::HTTP_CREATED);
-        } catch (\Exception $e) {
-            return $this->json([
-                'error' => 'Registration failed: ' . $e->getMessage(),
-            ], Response::HTTP_BAD_REQUEST);
-        }
+        $result = $this->commandBus->dispatch($command);
+
+        return $this->json([
+            'message' => 'User registered successfully',
+            'user' => $result
+        ], Response::HTTP_CREATED);
     }
 }
