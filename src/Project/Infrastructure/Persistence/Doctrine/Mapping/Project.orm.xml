@@ -21,6 +21,17 @@
             <join-column name="owner_id" referenced-column-name="id" nullable="false"/>
         </many-to-one>
 
+        <many-to-many field="members" target-entity="App\User\Domain\Entity\User">
+            <join-table name="project_members">
+                <join-columns>
+                    <join-column name="project_id" referenced-column-name="id"/>
+                </join-columns>
+                <inverse-join-columns>
+                    <join-column name="user_id" referenced-column-name="id"/>
+                </inverse-join-columns>
+            </join-table>
+        </many-to-many>
+
         <one-to-many field="tasks" target-entity="App\Task\Domain\Entity\Task" mapped-by="project" orphan-removal="true">
             <cascade>
                 <cascade-persist/>

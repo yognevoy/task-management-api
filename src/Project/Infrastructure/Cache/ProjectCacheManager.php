@@ -23,6 +23,7 @@ class ProjectCacheManager
     public function invalidateCache(Project $project): void
     {
         $this->projectCache->delete('project_' . $project->getId());
+        $this->projectCache->delete('project_members_' . $project->getId());
         $this->projectCache->delete('projects_all');
         $this->projectCache->delete('projects_user_' . $project->getOwnerId());
     }

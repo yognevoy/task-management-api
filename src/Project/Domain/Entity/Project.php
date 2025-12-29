@@ -16,6 +16,8 @@ class Project
     private User $owner;
     /** @var Collection<int, Task> */
     private Collection $tasks;
+    /** @var Collection<int, User> */
+    private Collection $members;
     private ?\DateTimeImmutable $createdAt = null;
     private ?\DateTimeImmutable $updatedAt = null;
 
@@ -30,6 +32,7 @@ class Project
         $this->createdAt = $now;
         $this->updatedAt = $now;
         $this->tasks = new ArrayCollection();
+        $this->members = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -73,6 +76,11 @@ class Project
         return $this;
     }
 
+    public function isOwner(User $user): bool
+    {
+        return $this->owner === $user;
+    }
+
     /**
      * @return Collection<int, Task>
      */
@@ -94,7 +102,6 @@ class Project
     public function removeTask(Task $task): static
     {
         if ($this->tasks->removeElement($task)) {
-            // set the owning side to null (unless already changed)
             if ($task->getProject() === $this) {
                 $task->setProject(null);
             }
@@ -130,5 +137,34 @@ class Project
     public function updateTimestamps(): void
     {
         $this->updatedAt = new DateTimeImmutable();
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getMembers(): Collection
+    {
+        return $this->members;
+    }
+
+    public function addMember(User $member): static
+    {
+        if (!$this->members->contains($member)) {
+            $this->members->add($member);
+        }
+
+        return $this;
+    }
+
+    public function removeMember(User $member): static
+    {
+        $this->members->removeElement($member);
+
+        return $this;
+    }
+
+    public function isMember(User $user): bool
+    {
+        return $this->members->contains($user);
     }
 }

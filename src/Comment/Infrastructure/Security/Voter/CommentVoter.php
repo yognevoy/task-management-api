@@ -36,7 +36,7 @@ class CommentVoter extends Voter
             return true;
         }
 
-        return match($attribute) {
+        return match ($attribute) {
             self::VIEW => $this->canView($user, $comment),
             self::EDIT => $this->canEdit($user, $comment),
             self::DELETE => $this->canDelete($user, $comment),
@@ -58,7 +58,8 @@ class CommentVoter extends Voter
             if ($task->getOwner() === $currentUser) {
                 return true;
             }
-            if ($task->getProject() && $task->getProject()->getOwner() === $currentUser) {
+            if ($task->getProject()
+                && ($task->getProject()->isMember($currentUser) || $task->getProject()->isOwner($currentUser))) {
                 return true;
             }
         }

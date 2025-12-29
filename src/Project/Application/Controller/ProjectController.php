@@ -2,13 +2,17 @@
 
 namespace App\Project\Application\Controller;
 
+use App\Project\Application\Command\AddProjectMember\AddProjectMemberCommand;
 use App\Project\Application\Command\CreateProject\CreateProjectCommand;
 use App\Project\Application\Command\DeleteProject\DeleteProjectCommand;
+use App\Project\Application\Command\RemoveProjectMember\RemoveProjectMemberCommand;
 use App\Project\Application\Command\UpdateProject\UpdateProjectCommand;
+use App\Project\Application\DTO\AddProjectMemberRequest;
 use App\Project\Application\DTO\CreateProjectRequest;
 use App\Project\Application\DTO\UpdateProjectRequest;
 use App\Project\Application\Query\GetAllProjects\GetAllProjectsQuery;
 use App\Project\Application\Query\GetProject\GetProjectQuery;
+use App\Project\Application\Query\GetProjectMembers\GetProjectMembersQuery;
 use App\Project\Application\Query\GetProjectTasks\GetProjectTasksQuery;
 use App\Project\Domain\Exception\ProjectNotFoundException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
@@ -160,6 +164,83 @@ class ProjectController extends AbstractController
 
         $query = new GetProjectTasksQuery($id);
         $result = $this->queryBus->query($query);
+
+        return $this->json($result);
+    }
+
+    /**
+     * Retrieves members for a given project.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
+    #[Route('/{id}/members', name: 'get_project_members', methods: ['GET'])]
+    public function getProjectMembers(int $id): JsonResponse
+    {
+        $project = $this->projectRepository->find($id);
+        if (!$project) {
+            throw new ProjectNotFoundException();
+        }
+
+        $this->denyAccessUnlessGranted(ProjectVoter::VIEW, $project);
+
+        $query = new GetProjectMembersQuery($id);
+        $result = $this->queryBus->query($query);
+
+        return $this->json($result);
+    }
+
+    /**
+     * Adds a member to a project.
+     *
+     * @param int $id
+     * @param AddProjectMemberRequest $dto
+     * @return JsonResponse
+     */
+    #[Route('/{id}/members', name: 'add_project_member', methods: ['POST'])]
+    public function addProjectMember(int $id, #[MapRequestPayload] AddProjectMemberRequest $dto): JsonResponse
+    {
+        $project = $this->projectRepository->find($id);
+        if (!$project) {
+            throw new ProjectNotFoundException();
+        }
+
+        $this->denyAccessUnlessGranted(ProjectVoter::ADD_MEMBER, $project);
+
+        $command = new AddProjectMemberCommand(
+            $id,
+            $dto->userId
+        );
+
+        $result = $this->commandBus->dispatch($command);
+
+        return $this->json($result, Response::HTTP_CREATED);
+    }
+
+    /**
+     * Removes a member from a project.
+     *
+     * @param int $id
+     * @param int $userId
+     * @return JsonResponse
+     */
+    #[Route('/{id}/members/{userId}', name: 'remove_project_member', methods: ['DELETE'])]
+    public function removeProjectMember(int $id, int $userId): JsonResponse
+    {
+        $project = $this->projectRepository->find($id);
+        if (!$project) {
+            throw new ProjectNotFoundException();
+        }
+
+        $this->denyAccessUnlessGranted(ProjectVoter::REMOVE_MEMBER, $project);
+
+        $command = new RemoveProjectMemberCommand(
+            $id,
+            $userId,
+            $this->getUser()
+        );
+
+        $result = $this->commandBus->dispatch($command);
 
         return $this->json($result);
     }

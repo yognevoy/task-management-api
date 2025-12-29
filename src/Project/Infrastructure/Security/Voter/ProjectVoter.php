@@ -13,10 +13,19 @@ class ProjectVoter extends Voter
     public const EDIT = 'edit';
     public const DELETE = 'delete';
     public const VIEW_TASKS = 'view_tasks';
+    public const ADD_MEMBER = 'add_member';
+    public const REMOVE_MEMBER = 'remove_member';
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        if (!in_array($attribute, [self::VIEW, self::EDIT, self::DELETE, self::VIEW_TASKS])) {
+        if (!in_array($attribute, [
+            self::VIEW,
+            self::EDIT,
+            self::DELETE,
+            self::VIEW_TASKS,
+            self::ADD_MEMBER,
+            self::REMOVE_MEMBER
+        ])) {
             return false;
         }
 
@@ -37,11 +46,13 @@ class ProjectVoter extends Voter
             return true;
         }
 
-        return match($attribute) {
+        return match ($attribute) {
             self::VIEW => $this->canView($user, $project),
             self::EDIT => $this->canEdit($user, $project),
             self::DELETE => $this->canDelete($user, $project),
             self::VIEW_TASKS => $this->canViewTasks($user, $project),
+            self::ADD_MEMBER => $this->canAddMember($user, $project),
+            self::REMOVE_MEMBER => $this->canRemoveMember($user, $project),
             default => false,
         };
     }
@@ -55,7 +66,7 @@ class ProjectVoter extends Voter
      */
     private function canView(User $currentUser, Project $project): bool
     {
-        return true;
+        return $project->isMember($currentUser) || $project->isOwner($currentUser);
     }
 
     /**
@@ -89,8 +100,44 @@ class ProjectVoter extends Voter
      * @param Project $project
      * @return bool
      */
+
+    /**
+     * Checks if the current user can view tasks of the target project.
+     *
+     * @param User $currentUser
+     * @param Project $project
+     * @return bool
+     */
     private function canViewTasks(User $currentUser, Project $project): bool
     {
+        return $project->isMember($currentUser) || $project->getOwner() === $currentUser;
+    }
+
+    /**
+     * Checks if the current user can add members to the target project.
+     *
+     * @param User $currentUser
+     * @param Project $project
+     * @return bool
+     */
+    private function canAddMember(User $currentUser, Project $project): bool
+    {
         return $project->getOwner() === $currentUser;
+    }
+
+    /**
+     * Checks if the current user can remove members from the target project.
+     *
+     * @param User $currentUser
+     * @param Project $project
+     * @return bool
+     */
+    private function canRemoveMember(User $currentUser, Project $project): bool
+    {
+        if ($project->getOwner() === $currentUser) {
+            return true;
+        }
+
+        return $project->getMembers()->contains($currentUser);
     }
 }
