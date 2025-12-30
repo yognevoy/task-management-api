@@ -32,4 +32,10 @@ interface TaskRepositoryInterface
      * @return Task[]
      */
     public function findByProject(Project $project): array;
+
+    /**
+     * @param User $owner
+     * @return int
+     */
+    public function countByOwner(User $owner): int;
 }

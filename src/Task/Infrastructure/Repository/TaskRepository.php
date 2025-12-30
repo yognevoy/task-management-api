@@ -66,4 +66,22 @@ class TaskRepository extends ServiceEntityRepository implements TaskRepositoryIn
             ->getResult()
         ;
     }
+
+    /**
+     * Count tasks owned by a user.
+     *
+     * @param User $owner
+     * @return int
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function countByOwner(User $owner): int
+    {
+        return $this->createQueryBuilder('t')
+            ->select('COUNT(t.id)')
+            ->andWhere('t.owner = :owner')
+            ->setParameter('owner', $owner)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

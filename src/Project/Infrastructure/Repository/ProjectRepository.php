@@ -35,6 +35,24 @@ class ProjectRepository extends ServiceEntityRepository implements ProjectReposi
     }
 
     /**
+     * Count projects owned by a user
+     *
+     * @param User $owner
+     * @return int
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function countByOwner(User $owner): int
+    {
+        return $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->andWhere('p.owner = :owner')
+            ->setParameter('owner', $owner)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
      * Count tasks associated with a project
      */
     public function countTasks(Project $project): int

@@ -23,6 +23,12 @@ interface ProjectRepositoryInterface
     public function findByOwner(User $owner): array;
 
     /**
+     * @param User $owner
+     * @return int
+     */
+    public function countByOwner(User $owner): int;
+
+    /**
      * Count tasks associated with a project
      */
     public function countTasks(Project $project): int;
