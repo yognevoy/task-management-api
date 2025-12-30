@@ -3,8 +3,8 @@
 namespace App\Project\Infrastructure\Repository;
 
 use App\Project\Domain\Entity\Project;
-use App\User\Domain\Entity\User;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
+use App\User\Domain\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -50,22 +50,5 @@ class ProjectRepository extends ServiceEntityRepository implements ProjectReposi
             ->setParameter('owner', $owner)
             ->getQuery()
             ->getSingleScalarResult();
-    }
-
-    /**
-     * Count tasks associated with a project
-     */
-    public function countTasks(Project $project): int
-    {
-        $result = $this->getEntityManager()
-            ->createQuery('
-                SELECT COUNT(t.id)
-                FROM App\Task\Domain\Entity\Task t
-                WHERE t.project = :project
-            ')
-            ->setParameter('project', $project)
-            ->getSingleScalarResult();
-
-        return (int)$result;
     }
 }

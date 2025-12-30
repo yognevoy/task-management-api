@@ -84,4 +84,22 @@ class TaskRepository extends ServiceEntityRepository implements TaskRepositoryIn
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /**
+     * Count tasks associated with a project.
+     *
+     * @param Project $project
+     * @return int
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function countByProject(Project $project): int
+    {
+        return $this->createQueryBuilder('t')
+            ->select('COUNT(t.id)')
+            ->andWhere('t.project = :project')
+            ->setParameter('project', $project)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

@@ -27,9 +27,4 @@ interface ProjectRepositoryInterface
      * @return int
      */
     public function countByOwner(User $owner): int;
-
-    /**
-     * Count tasks associated with a project
-     */
-    public function countTasks(Project $project): int;
 }

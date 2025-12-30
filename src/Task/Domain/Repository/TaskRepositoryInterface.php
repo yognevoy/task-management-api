@@ -38,4 +38,10 @@ interface TaskRepositoryInterface
      * @return int
      */
     public function countByOwner(User $owner): int;
+
+    /**
+     * @param Project $project
+     * @return int
+     */
+    public function countByProject(Project $project): int;
 }

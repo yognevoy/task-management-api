@@ -7,6 +7,7 @@ use App\Project\Domain\Exception\ProjectNotFoundException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Project\Infrastructure\Cache\ProjectCacheManager;
 use App\Shared\Application\Command\CommandHandlerInterface;
+use App\Task\Domain\Repository\TaskRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
 class DeleteProjectCommandHandler implements CommandHandlerInterface
@@ -14,6 +15,7 @@ class DeleteProjectCommandHandler implements CommandHandlerInterface
     public function __construct(
         private EntityManagerInterface     $entityManager,
         private ProjectRepositoryInterface $projectRepository,
+        private TaskRepositoryInterface    $taskRepository,
         private ProjectCacheManager        $projectCacheManager,
     )
     {
@@ -26,7 +28,7 @@ class DeleteProjectCommandHandler implements CommandHandlerInterface
             throw new ProjectNotFoundException();
         }
 
-        $taskCount = $this->projectRepository->countTasks($project);
+        $taskCount = $this->taskRepository->countByProject($project);
         if ($taskCount > 0) {
             throw new ProjectHasTasksException();
         }
