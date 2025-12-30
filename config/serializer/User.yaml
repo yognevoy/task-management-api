@@ -1,8 +1,0 @@
-App\User\Domain\Entity\User:
-    attributes:
-        id:
-            groups: ['user:read', 'task:read']
-        email:
-            groups: ['user:read', 'user:write', 'task:read']
-        roles:
-            groups: ['user:read', 'user:write']
