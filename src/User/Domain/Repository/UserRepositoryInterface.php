@@ -15,4 +15,9 @@ interface UserRepositoryInterface
      * @return User[]
      */
     public function findAll();
+
+    /**
+     * @return int
+     */
+    public function countAll(): int;
 }

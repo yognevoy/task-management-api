@@ -4,6 +4,7 @@ namespace App\User\Application\Controller;
 
 use App\Shared\Application\Command\CommandBusInterface;
 use App\Shared\Application\Query\QueryBusInterface;
+use App\Shared\Domain\ValueObject\Pagination;
 use App\User\Application\Command\DeleteUser\DeleteUserCommand;
 use App\User\Application\Command\UpdateUser\UpdateUserCommand;
 use App\User\Application\DTO\UpdateUserRequest;
@@ -14,6 +15,7 @@ use App\User\Domain\Repository\UserRepositoryInterface;
 use App\User\Infrastructure\Security\Voter\UserVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
@@ -86,9 +88,13 @@ class UserController extends AbstractController
      * @return JsonResponse
      */
     #[Route('', name: 'get_all', methods: ['GET'])]
-    public function getAllUsers(): JsonResponse
+    public function getAllUsers(Request $request): JsonResponse
     {
-        $query = new GetAllUsersQuery();
+        $page = (int)$request->query->get('page');
+        $limit = (int)$request->query->get('limit');
+
+        $pagination = Pagination::create($page, $limit);
+        $query = new GetAllUsersQuery($pagination);
         $result = $this->queryBus->query($query);
 
         return $this->json($result);

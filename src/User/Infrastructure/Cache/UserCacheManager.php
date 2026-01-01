@@ -3,13 +3,15 @@
 namespace App\User\Infrastructure\Cache;
 
 use App\User\Domain\Entity\User;
-use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class UserCacheManager
 {
     public function __construct(
-        private CacheInterface $userCache,
-    ) {}
+        private TagAwareCacheInterface $userCache,
+    )
+    {
+    }
 
     /**
      * Invalidates cache for a given user.
@@ -20,7 +22,7 @@ class UserCacheManager
      */
     public function invalidateCache(User $user): void
     {
+        $this->userCache->invalidateTags(['users']);
         $this->userCache->delete('user_' . $user->getId());
-        $this->userCache->delete('users_all');
     }
 }
