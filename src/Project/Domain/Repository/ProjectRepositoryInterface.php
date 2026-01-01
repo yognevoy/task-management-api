@@ -27,4 +27,9 @@ interface ProjectRepositoryInterface
      * @return int
      */
     public function countByOwner(User $owner): int;
+
+    /**
+     * @return int
+     */
+    public function countAll(): int;
 }

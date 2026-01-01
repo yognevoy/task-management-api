@@ -19,6 +19,7 @@ use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Project\Infrastructure\Security\Voter\ProjectVoter;
 use App\Shared\Application\Command\CommandBusInterface;
 use App\Shared\Application\Query\QueryBusInterface;
+use App\Shared\Domain\ValueObject\Pagination;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -118,7 +119,11 @@ class ProjectController extends AbstractController
     public function getAllProjects(Request $request): JsonResponse
     {
         $ownerId = $request->query->get('owner');
-        $query = new GetAllProjectsQuery($ownerId);
+        $page = (int)$request->query->get('page');
+        $limit = (int)$request->query->get('limit');
+
+        $pagination = Pagination::create($page, $limit);
+        $query = new GetAllProjectsQuery($ownerId, $pagination);
         $result = $this->queryBus->query($query);
 
         return $this->json($result);

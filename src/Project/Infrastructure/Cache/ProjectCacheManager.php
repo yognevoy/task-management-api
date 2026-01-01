@@ -3,12 +3,12 @@
 namespace App\Project\Infrastructure\Cache;
 
 use App\Project\Domain\Entity\Project;
-use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class ProjectCacheManager
 {
     public function __construct(
-        private CacheInterface $projectCache,
+        private TagAwareCacheInterface $projectCache,
     )
     {
     }
@@ -22,9 +22,9 @@ class ProjectCacheManager
      */
     public function invalidateCache(Project $project): void
     {
+        $this->projectCache->invalidateTags(['projects']);
+        $this->projectCache->invalidateTags(['user_' . $project->getOwnerId()]);
         $this->projectCache->delete('project_' . $project->getId());
         $this->projectCache->delete('project_members_' . $project->getId());
-        $this->projectCache->delete('projects_all');
-        $this->projectCache->delete('projects_user_' . $project->getOwnerId());
     }
 }
