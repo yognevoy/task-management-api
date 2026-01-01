@@ -44,4 +44,15 @@ interface TaskRepositoryInterface
      * @return int
      */
     public function countByProject(Project $project): int;
+
+    /**
+     * @param User $user
+     * @return int
+     */
+    public function countByUser(User $user): int;
+
+    /**
+     * @return int
+     */
+    public function countAll(): int;
 }

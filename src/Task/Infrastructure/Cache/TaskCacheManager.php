@@ -3,12 +3,12 @@
 namespace App\Task\Infrastructure\Cache;
 
 use App\Task\Domain\Entity\Task;
-use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class TaskCacheManager
 {
     public function __construct(
-        private CacheInterface $taskCache,
+        private TagAwareCacheInterface $taskCache,
     ) {}
 
     /**
@@ -20,11 +20,20 @@ class TaskCacheManager
      */
     public function invalidateCache(Task $task): void
     {
-        $this->taskCache->delete('tasks_user_' . $task->getOwnerId());
+        $tags = ['user_' . $task->getOwnerId()];
+
         if ($task->getAssignee()) {
-            $this->taskCache->delete('tasks_user_' . $task->getAssigneeId());
+            $tags[] = 'user_' . $task->getAssigneeId();
         }
-        $this->taskCache->delete('tasks_all');
+
+        if ($task->getProject()) {
+            foreach ($task->getProject()->getMembers() as $member) {
+                $tags[] = 'user_' . $member->getId();
+            }
+        }
+
+        $this->taskCache->invalidateTags($tags);
+
         $this->taskCache->delete('task_' . $task->getId());
         $this->taskCache->delete('subtasks_' . $task->getId());
 

@@ -4,6 +4,7 @@ namespace App\Task\Application\Controller;
 
 use App\Shared\Application\Command\CommandBusInterface;
 use App\Shared\Application\Query\QueryBusInterface;
+use App\Shared\Domain\ValueObject\Pagination;
 use App\Task\Application\Command\CreateTask\CreateTaskCommand;
 use App\Task\Application\Command\DeleteTask\DeleteTaskCommand;
 use App\Task\Application\Command\UpdateTask\UpdateTaskCommand;
@@ -117,7 +118,11 @@ class TaskController extends AbstractController
     #[Route('', name: 'get_all', methods: ['GET'])]
     public function getAllTasks(Request $request): JsonResponse
     {
-        $query = new GetAllTasksQuery($this->getUser());
+        $page = (int)$request->query->get('page');
+        $limit = (int)$request->query->get('limit');
+
+        $pagination = Pagination::create($page, $limit);
+        $query = new GetAllTasksQuery($this->getUser(), $pagination);
         $result = $this->queryBus->query($query);
 
         return $this->json($result);

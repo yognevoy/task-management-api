@@ -102,4 +102,39 @@ class TaskRepository extends ServiceEntityRepository implements TaskRepositoryIn
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    /**
+     * Count tasks accessible by user (owner, assignee, project owner, or project member).
+     *
+     * @param User $user
+     * @return int
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function countByUser(User $user): int
+    {
+        return $this->createQueryBuilder('t')
+            ->select('COUNT(t.id)')
+            ->leftJoin('t.project', 'p')
+            ->leftJoin('p.members', 'm')
+            ->where('t.owner = :user OR t.assignee = :user OR p.owner = :user OR m = :user')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Count all tasks.
+     *
+     * @return int
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function countAll(): int
+    {
+        return $this->createQueryBuilder('t')
+            ->select('COUNT(t.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }
