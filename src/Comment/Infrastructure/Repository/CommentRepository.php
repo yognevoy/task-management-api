@@ -50,4 +50,76 @@ class CommentRepository extends ServiceEntityRepository implements CommentReposi
             ->getResult()
         ;
     }
+
+    /**
+     * Count comments by task
+     *
+     * @param Task $task
+     * @return int
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function countByTask(Task $task): int
+    {
+        return $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.task = :task')
+            ->setParameter('task', $task)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Count comments by author
+     *
+     * @param User $author
+     * @return int
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function countByAuthor(User $author): int
+    {
+        return $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.author = :author')
+            ->setParameter('author', $author)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Count comments accessible by user (author of comment, owner, assignee of task or owner, member of project)
+     *
+     * @param User $user
+     * @return int
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function countByUser(User $user): int
+    {
+        return $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->join('c.task', 't')
+            ->leftJoin('t.project', 'p')
+            ->leftJoin('p.members', 'm')
+            ->where('c.author = :user OR t.owner = :user OR t.assignee = :user OR p.owner = :user OR m = :user')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Count all comments
+     *
+     * @return int
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function countAll(): int
+    {
+        return $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

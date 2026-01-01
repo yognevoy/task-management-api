@@ -5,6 +5,7 @@ namespace App\Comment\Application\Query\GetAllComments;
 use App\Comment\Application\DTO\CommentListResponse;
 use App\Comment\Domain\Entity\Comment;
 use App\Comment\Domain\Repository\CommentRepositoryInterface;
+use App\Shared\Application\DTO\PaginatedResponse;
 use App\Shared\Application\Query\QueryHandlerInterface;
 use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Domain\Exception\TaskNotFoundException;
@@ -13,7 +14,7 @@ use App\User\Domain\Entity\User;
 use App\User\Domain\Exception\UserNotFoundException;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class GetAllCommentsQueryHandler implements QueryHandlerInterface
 {
@@ -22,56 +23,105 @@ class GetAllCommentsQueryHandler implements QueryHandlerInterface
         private TaskRepositoryInterface    $taskRepository,
         private UserRepositoryInterface    $userRepository,
         private EntityManagerInterface     $entityManager,
-        private CacheInterface             $commentCache,
+        private TagAwareCacheInterface     $commentCache,
     )
     {
     }
 
-    public function __invoke(GetAllCommentsQuery $query): CommentListResponse
+    public function __invoke(GetAllCommentsQuery $query): PaginatedResponse
     {
         $currentUser = $query->currentUser;
         if (!$currentUser instanceof User) {
             throw new AccessDeniedException();
         }
 
-        $cacheKey = $query->taskId ? 'comments_task_' . $query->taskId :
-            ($query->authorId ? 'comments_author_' . $query->authorId :
-                ($currentUser->isAdmin() ? 'comments_all' : 'comments_user_' . $currentUser->getId()));
+        $pagination = $query->pagination;
 
-        return $this->commentCache->get($cacheKey, function () use ($query, $currentUser) {
-            if ($query->taskId !== null) {
+        if ($query->taskId) {
+            $cacheKey = sprintf(
+                'comments_task_%d_page_%d_limit_%d',
+                $query->taskId,
+                $pagination->getPage(),
+                $pagination->getLimit()
+            );
+        } elseif ($query->authorId) {
+            $cacheKey = sprintf(
+                'comments_author_%d_page_%d_limit_%d',
+                $query->authorId,
+                $pagination->getPage(),
+                $pagination->getLimit()
+            );
+        } elseif ($currentUser->isAdmin()) {
+            $cacheKey = sprintf(
+                'comments_all_page_%d_limit_%d',
+                $pagination->getPage(),
+                $pagination->getLimit()
+            );
+        } else {
+            $cacheKey = sprintf(
+                'comments_user_%d_page_%d_limit_%d',
+                $currentUser->getId(),
+                $pagination->getPage(),
+                $pagination->getLimit()
+            );
+        }
+
+        return $this->commentCache->get($cacheKey, function ($item) use ($query, $currentUser, $pagination) {
+            $qb = $this->entityManager->createQueryBuilder();
+            $qb->select('c')
+                ->from(Comment::class, 'c');
+
+            if ($query->taskId) {
                 $task = $this->taskRepository->find($query->taskId);
                 if (!$task) {
                     throw new TaskNotFoundException();
                 }
 
-                $comments = $this->commentRepository->findByTask($task);
-            } elseif ($query->authorId !== null) {
+                $qb->where('c.task = :task')
+                    ->setParameter('task', $task);
+
+                $total = $this->commentRepository->countByTask($task);
+            } elseif ($query->authorId) {
                 $user = $this->userRepository->find($query->authorId);
                 if (!$user) {
                     throw new UserNotFoundException();
                 }
 
-                $comments = $this->commentRepository->findByAuthor($user);
+                $qb->where('c.author = :author')
+                    ->setParameter('author', $user);
+
+                $total = $this->commentRepository->countByAuthor($user);
             } else {
                 if (!$currentUser->isAdmin()) {
-                    $qb = $this->entityManager->createQueryBuilder();
-                    $comments = $qb
-                        ->select('c')
-                        ->from(Comment::class, 'c')
-                        ->join('c.task', 't')
+                    $qb->join('c.task', 't')
                         ->leftJoin('t.project', 'p')
-                        ->where('t.owner = :user OR p.owner = :user')
-                        ->setParameter('user', $currentUser)
-                        ->orderBy('c.createdAt', 'ASC')
-                        ->getQuery()
-                        ->getResult();
+                        ->leftJoin('p.members', 'm')
+                        ->where('c.author = :user OR t.owner = :user OR t.assignee = :user OR p.owner = :user OR m = :user')
+                        ->setParameter('user', $currentUser);
+
+                    $total = $this->commentRepository->countByUser($currentUser);
                 } else {
-                    $comments = $this->commentRepository->findAll();
+                    $total = $this->commentRepository->countAll();
                 }
             }
 
-            return new CommentListResponse($comments);
+            $comments = $qb
+                ->orderBy('c.createdAt', 'ASC')
+                ->setFirstResult($pagination->getOffset())
+                ->setMaxResults($pagination->getLimit())
+                ->getQuery()
+                ->getResult();
+
+            if ($query->taskId) {
+                $item->tag(['task_' . $query->taskId]);
+            } elseif ($query->authorId) {
+                $item->tag(['author_' . $query->authorId]);
+            } else {
+                $item->tag(['comments']);
+            }
+
+            $commentListResponse = new CommentListResponse($comments);
+            return new PaginatedResponse($commentListResponse, $total, $pagination->getPage(), $pagination->getLimit());
         });
     }
 }

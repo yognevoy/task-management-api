@@ -27,4 +27,24 @@ interface CommentRepositoryInterface
      * @return Comment[]
      */
     public function findByAuthor(User $author): array;
+
+    /**
+     * @return int
+     */
+    public function countByTask(Task $task): int;
+
+    /**
+     * @return int
+     */
+    public function countByAuthor(User $author): int;
+
+    /**
+     * @return int
+     */
+    public function countByUser(User $user): int;
+
+    /**
+     * @return int
+     */
+    public function countAll(): int;
 }

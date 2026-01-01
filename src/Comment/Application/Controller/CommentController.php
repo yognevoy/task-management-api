@@ -15,6 +15,7 @@ use App\Comment\Domain\Repository\CommentRepositoryInterface;
 use App\Comment\Infrastructure\Security\Voter\CommentVoter;
 use App\Shared\Application\Command\CommandBusInterface;
 use App\Shared\Application\Query\QueryBusInterface;
+use App\Shared\Domain\ValueObject\Pagination;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\Task\Infrastructure\Security\Voter\TaskVoter;
@@ -117,7 +118,12 @@ class CommentController extends AbstractController
     {
         $taskId = $request->query->get('task');
         $authorId = $request->query->get('author');
-        $query = new GetAllCommentsQuery($taskId, $authorId, $this->getUser());
+
+        $page = (int)$request->query->get('page');
+        $limit = (int)$request->query->get('limit');
+
+        $pagination = Pagination::create($page, $limit);
+        $query = new GetAllCommentsQuery($taskId, $authorId, $this->getUser(), $pagination);
         $result = $this->queryBus->query($query);
 
         return $this->json($result);
