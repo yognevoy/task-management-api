@@ -14,6 +14,7 @@ class Pagination
 
     private function __construct(int $page, int $limit)
     {
+        // TODO: add page and limit validation
         $this->page = max(
             self::MIN_PAGE,
             $page
