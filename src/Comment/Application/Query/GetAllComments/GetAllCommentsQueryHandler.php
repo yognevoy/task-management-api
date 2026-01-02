@@ -117,7 +117,11 @@ class GetAllCommentsQueryHandler implements QueryHandlerInterface
             } elseif ($query->authorId) {
                 $item->tag(['author_' . $query->authorId]);
             } else {
-                $item->tag(['comments']);
+                if (!$currentUser->isAdmin()) {
+                    $item->tag(['user_' . $currentUser->getId()]);
+                } else {
+                    $item->tag(['comments']);
+                }
             }
 
             $commentListResponse = new CommentListResponse($comments);

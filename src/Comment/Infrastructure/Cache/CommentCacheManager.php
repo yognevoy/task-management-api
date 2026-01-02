@@ -22,9 +22,39 @@ class CommentCacheManager
      */
     public function invalidateCache(Comment $comment): void
     {
-        $this->commentCache->invalidateTags(['comments']);
-        $this->commentCache->invalidateTags(['task_' . $comment->getTaskId()]);
-        $this->commentCache->invalidateTags(['author_' . $comment->getAuthorId()]);
+        $tags = [
+            'comments',
+            'task_' . $comment->getTaskId(),
+            'author_' . $comment->getAuthorId(),
+            'user_' . $comment->getAuthorId()
+        ];
+
+        $task = $comment->getTask();
+
+        if ($task) {
+            if ($task->getOwnerId()) {
+                $tags[] = 'user_' . $task->getOwnerId();
+            }
+
+            if ($task->getAssignee()) {
+                $tags[] = 'user_' . $task->getAssigneeId();
+            }
+
+            $project = $task->getProject();
+
+            if ($project) {
+                if ($project->getOwnerId()) {
+                    $tags[] = 'user_' . $project->getOwnerId();
+                }
+
+                foreach ($task->getProject()->getMembers() as $member) {
+                    $tags[] = 'user_' . $member->getId();
+                }
+            }
+        }
+
+        $this->commentCache->invalidateTags($tags);
+
         $this->commentCache->delete('comment_' . $comment->getId());
     }
 }
