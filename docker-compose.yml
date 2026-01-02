@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   nginx:
+    container_name: task_management_api_nginx
     build:
       context: .
       dockerfile: docker/nginx/Dockerfile
@@ -14,6 +15,7 @@ services:
       - mysql
 
   php:
+    container_name: task_management_api_php
     build:
       context: .
       dockerfile: docker/php-fpm/Dockerfile
@@ -23,6 +25,7 @@ services:
       - mysql
 
   mysql:
+    container_name: task_management_api_mysql
     build:
       context: .
       dockerfile: docker/mysql/Dockerfile
@@ -38,6 +41,7 @@ services:
       - mysql_data:/var/lib/mysql
 
   redis:
+    container_name: task_management_api_redis
     build:
       context: ./docker/redis
       dockerfile: Dockerfile
