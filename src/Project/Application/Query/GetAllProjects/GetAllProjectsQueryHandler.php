@@ -66,7 +66,7 @@ class GetAllProjectsQueryHandler implements QueryHandlerInterface
         });
     }
 
-    private function generateCacheKey(int $ownerId, $pagination): string
+    private function generateCacheKey(?int $ownerId, $pagination): string
     {
         if ($ownerId) {
             return sprintf(
