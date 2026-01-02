@@ -28,20 +28,7 @@ class GetAllProjectsQueryHandler implements QueryHandlerInterface
         $pagination = $query->pagination;
         $ownerId = $query->ownerId;
 
-        if ($ownerId) {
-            $cacheKey = sprintf(
-                'projects_user_%d_page_%d_limit_%d',
-                $ownerId,
-                $pagination->getPage(),
-                $pagination->getLimit()
-            );
-        } else {
-            $cacheKey = sprintf(
-                'projects_all_page_%d_limit_%d',
-                $pagination->getPage(),
-                $pagination->getLimit()
-            );
-        }
+        $cacheKey = $this->generateCacheKey($ownerId, $pagination);
 
         return $this->projectCache->get($cacheKey, function ($item) use ($query, $pagination) {
             $ownerId = $query->ownerId;
@@ -77,5 +64,23 @@ class GetAllProjectsQueryHandler implements QueryHandlerInterface
             $projectListResponse = new ProjectListResponse($projects);
             return new PaginatedResponse($projectListResponse, $total, $pagination->getPage(), $pagination->getLimit());
         });
+    }
+
+    private function generateCacheKey(int $ownerId, $pagination): string
+    {
+        if ($ownerId) {
+            return sprintf(
+                'projects_user_%d_page_%d_limit_%d',
+                $ownerId,
+                $pagination->getPage(),
+                $pagination->getLimit()
+            );
+        } else {
+            return sprintf(
+                'projects_all_page_%d_limit_%d',
+                $pagination->getPage(),
+                $pagination->getLimit()
+            );
+        }
     }
 }

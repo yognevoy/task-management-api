@@ -32,20 +32,7 @@ class GetAllTasksQueryHandler implements QueryHandlerInterface
 
         $pagination = $query->pagination;
 
-        $cacheKey = sprintf(
-            'tasks_user_%d_page_%d_limit_%d',
-            $currentUser->getId(),
-            $pagination->getPage(),
-            $pagination->getLimit()
-        );
-
-        if ($currentUser->isAdmin()) {
-            $cacheKey = sprintf(
-                'tasks_all_page_%d_limit_%d',
-                $pagination->getPage(),
-                $pagination->getLimit()
-            );
-        }
+        $cacheKey = $this->generateCacheKey($currentUser, $pagination);
 
         return $this->taskCache->get($cacheKey, function ($item) use ($currentUser, $pagination) {
             $item->tag(['user_' . $currentUser->getId()]);
@@ -72,5 +59,23 @@ class GetAllTasksQueryHandler implements QueryHandlerInterface
             $taskListResponse = new TaskListResponse($tasks);
             return new PaginatedResponse($taskListResponse, $total, $pagination->getPage(), $pagination->getLimit());
         });
+    }
+
+    private function generateCacheKey(User $currentUser, $pagination): string
+    {
+        if ($currentUser->isAdmin()) {
+            return sprintf(
+                'tasks_all_page_%d_limit_%d',
+                $pagination->getPage(),
+                $pagination->getLimit()
+            );
+        } else {
+            return sprintf(
+                'tasks_user_%d_page_%d_limit_%d',
+                $currentUser->getId(),
+                $pagination->getPage(),
+                $pagination->getLimit()
+            );
+        }
     }
 }
