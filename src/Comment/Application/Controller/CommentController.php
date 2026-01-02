@@ -119,8 +119,8 @@ class CommentController extends AbstractController
         $taskId = $request->query->get('task');
         $authorId = $request->query->get('author');
 
-        $page = (int)$request->query->get('page');
-        $limit = (int)$request->query->get('limit');
+        $page = $request->query->get('page');
+        $limit = $request->query->get('limit');
 
         $pagination = Pagination::create($page, $limit);
         $query = new GetAllCommentsQuery($taskId, $authorId, $this->getUser(), $pagination);

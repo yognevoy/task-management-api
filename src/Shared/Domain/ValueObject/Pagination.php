@@ -2,6 +2,8 @@
 
 namespace App\Shared\Domain\ValueObject;
 
+use App\Shared\Domain\Exception\InvalidPaginationException;
+
 class Pagination
 {
     private const DEFAULT_LIMIT = 100;
@@ -14,19 +16,23 @@ class Pagination
 
     private function __construct(int $page, int $limit)
     {
-        // TODO: add page and limit validation
-        $this->page = max(
-            self::MIN_PAGE,
-            $page
-        );
-        $this->limit = max(
-            self::MIN_LIMIT,
-            min($limit === 0 ? self::DEFAULT_LIMIT : $limit, self::MAX_LIMIT)
-        );
+        if ($page < self::MIN_PAGE) {
+            throw InvalidPaginationException::invalidPage();
+        }
+
+        if ($limit < self::MIN_LIMIT || $limit > self::MAX_LIMIT) {
+            throw InvalidPaginationException::invalidLimit();
+        }
+
+        $this->page = $page;
+        $this->limit = $limit;
     }
 
-    public static function create(int $page = 1, int $limit = self::DEFAULT_LIMIT): self
+    public static function create(?int $page = null, ?int $limit = null): self
     {
+        $page = $page ?? 1;
+        $limit = $limit ?? self::DEFAULT_LIMIT;
+
         return new self($page, $limit);
     }
 

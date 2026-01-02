@@ -118,8 +118,8 @@ class TaskController extends AbstractController
     #[Route('', name: 'get_all', methods: ['GET'])]
     public function getAllTasks(Request $request): JsonResponse
     {
-        $page = (int)$request->query->get('page');
-        $limit = (int)$request->query->get('limit');
+        $page = $request->query->get('page');
+        $limit = $request->query->get('limit');
 
         $pagination = Pagination::create($page, $limit);
         $query = new GetAllTasksQuery($this->getUser(), $pagination);

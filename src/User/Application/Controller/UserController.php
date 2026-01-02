@@ -90,8 +90,8 @@ class UserController extends AbstractController
     #[Route('', name: 'get_all', methods: ['GET'])]
     public function getAllUsers(Request $request): JsonResponse
     {
-        $page = (int)$request->query->get('page');
-        $limit = (int)$request->query->get('limit');
+        $page = $request->query->get('page');
+        $limit = $request->query->get('limit');
 
         $pagination = Pagination::create($page, $limit);
         $query = new GetAllUsersQuery($pagination);

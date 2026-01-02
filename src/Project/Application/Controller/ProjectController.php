@@ -119,8 +119,8 @@ class ProjectController extends AbstractController
     public function getAllProjects(Request $request): JsonResponse
     {
         $ownerId = $request->query->get('owner');
-        $page = (int)$request->query->get('page');
-        $limit = (int)$request->query->get('limit');
+        $page = $request->query->get('page');
+        $limit = $request->query->get('limit');
 
         $pagination = Pagination::create($page, $limit);
         $query = new GetAllProjectsQuery($ownerId, $pagination);
