@@ -36,42 +36,13 @@ class GetAllCommentsQueryHandler implements QueryHandlerInterface
 
         $pagination = $query->pagination;
 
-        if ($query->taskId || $query->authorId) {
-            return $this->executeQuery($query, $currentUser, $pagination);
-        }
-
         return $this->executeQuery($query, $currentUser, $pagination);
     }
 
     private function executeQuery(GetAllCommentsQuery $query, User $currentUser, $pagination): PaginatedResponse
     {
         $qb = $this->entityManager->createQueryBuilder();
-
-        if ($query->taskId) {
-            $task = $this->taskRepository->find($query->taskId);
-            if (!$task) {
-                throw new TaskNotFoundException();
-            }
-
-            $this->commentQueryBuilder->buildByTask($qb, $task);
-            $total = $this->commentRepository->countByTask($task);
-        } elseif ($query->authorId) {
-            $user = $this->userRepository->find($query->authorId);
-            if (!$user) {
-                throw new UserNotFoundException();
-            }
-
-            $this->commentQueryBuilder->buildByAuthor($qb, $user);
-            $total = $this->commentRepository->countByAuthor($user);
-        } else {
-            if ($currentUser->isAdmin()) {
-                $this->commentQueryBuilder->buildForAdmin($qb);
-                $total = $this->commentRepository->countAll();
-            } else {
-                $this->commentQueryBuilder->buildForUser($qb, $currentUser);
-                $total = $this->commentRepository->countByUser($currentUser);
-            }
-        }
+        $total = $this->applyFilters($qb, $query, $currentUser);
 
         $comments = $qb
             ->orderBy('c.createdAt', 'ASC')
@@ -81,6 +52,63 @@ class GetAllCommentsQueryHandler implements QueryHandlerInterface
             ->getResult();
 
         $commentListResponse = new CommentListResponse($comments);
-        return new PaginatedResponse($commentListResponse, $total, $pagination->getPage(), $pagination->getLimit());
+
+        return new PaginatedResponse(
+            $commentListResponse,
+            $total,
+            $pagination->getPage(),
+            $pagination->getLimit()
+        );
+    }
+
+    private function applyFilters($qb, GetAllCommentsQuery $query, User $currentUser): int
+    {
+        if ($query->taskId) {
+            return $this->applyTaskFilter($qb, $query->taskId);
+        }
+
+        if ($query->authorId) {
+            return $this->applyAuthorFilter($qb, $query->authorId);
+        }
+
+        if ($currentUser->isAdmin()) {
+            return $this->applyAdminFilter($qb);
+        }
+
+        return $this->applyUserFilter($qb, $currentUser);
+    }
+
+    private function applyTaskFilter($qb, int $taskId): int
+    {
+        $task = $this->taskRepository->find($taskId);
+        if (!$task) {
+            throw new TaskNotFoundException();
+        }
+
+        $this->commentQueryBuilder->buildByTask($qb, $task);
+        return $this->commentRepository->countByTask($task);
+    }
+
+    private function applyAuthorFilter($qb, int $authorId): int
+    {
+        $user = $this->userRepository->find($authorId);
+        if (!$user) {
+            throw new UserNotFoundException();
+        }
+
+        $this->commentQueryBuilder->buildByAuthor($qb, $user);
+        return $this->commentRepository->countByAuthor($user);
+    }
+
+    private function applyAdminFilter($qb): int
+    {
+        $this->commentQueryBuilder->buildForAdmin($qb);
+        return $this->commentRepository->countAll();
+    }
+
+    private function applyUserFilter($qb, User $currentUser): int
+    {
+        $this->commentQueryBuilder->buildForUser($qb, $currentUser);
+        return $this->commentRepository->countByUser($currentUser);
     }
 }
