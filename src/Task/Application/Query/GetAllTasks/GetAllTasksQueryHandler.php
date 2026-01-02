@@ -10,15 +10,13 @@ use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\Task\Infrastructure\Query\TaskQueryBuilder;
 use App\User\Domain\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class GetAllTasksQueryHandler implements QueryHandlerInterface
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
+        private EntityManagerInterface  $entityManager,
         private TaskRepositoryInterface $taskRepository,
-        private TaskQueryBuilder       $taskQueryBuilder,
-        private TagAwareCacheInterface $taskCache,
+        private TaskQueryBuilder        $taskQueryBuilder,
     )
     {
     }
@@ -32,50 +30,24 @@ class GetAllTasksQueryHandler implements QueryHandlerInterface
 
         $pagination = $query->pagination;
 
-        $cacheKey = $this->generateCacheKey($currentUser, $pagination);
+        $qb = $this->entityManager->createQueryBuilder();
 
-        return $this->taskCache->get($cacheKey, function ($item) use ($currentUser, $pagination) {
-            $item->tag(['user_' . $currentUser->getId()]);
-
-            $qb = $this->entityManager->createQueryBuilder();
-
-            if (!$currentUser->isAdmin()) {
-                $this->taskQueryBuilder->buildForUser($qb, $currentUser);
-            } else {
-                $this->taskQueryBuilder->buildForAdmin($qb);
-            }
-
-            $total = $currentUser->isAdmin()
-                ? $this->taskRepository->countAll()
-                : $this->taskRepository->countByUser($currentUser);
-
-            $tasks = $qb
-                ->orderBy('t.id', 'ASC')
-                ->setFirstResult($pagination->getOffset())
-                ->setMaxResults($pagination->getLimit())
-                ->getQuery()
-                ->getResult();
-
-            $taskListResponse = new TaskListResponse($tasks);
-            return new PaginatedResponse($taskListResponse, $total, $pagination->getPage(), $pagination->getLimit());
-        });
-    }
-
-    private function generateCacheKey(User $currentUser, $pagination): string
-    {
         if ($currentUser->isAdmin()) {
-            return sprintf(
-                'tasks_all_page_%d_limit_%d',
-                $pagination->getPage(),
-                $pagination->getLimit()
-            );
+            $this->taskQueryBuilder->buildForAdmin($qb);
+            $total = $this->taskRepository->countAll();
         } else {
-            return sprintf(
-                'tasks_user_%d_page_%d_limit_%d',
-                $currentUser->getId(),
-                $pagination->getPage(),
-                $pagination->getLimit()
-            );
+            $this->taskQueryBuilder->buildForUser($qb, $currentUser);
+            $total = $this->taskRepository->countByUser($currentUser);
         }
+
+        $tasks = $qb
+            ->orderBy('t.id', 'ASC')
+            ->setFirstResult($pagination->getOffset())
+            ->setMaxResults($pagination->getLimit())
+            ->getQuery()
+            ->getResult();
+
+        $taskListResponse = new TaskListResponse($tasks);
+        return new PaginatedResponse($taskListResponse, $total, $pagination->getPage(), $pagination->getLimit());
     }
 }

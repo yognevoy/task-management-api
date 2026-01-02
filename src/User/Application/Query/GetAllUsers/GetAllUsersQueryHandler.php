@@ -8,14 +8,12 @@ use App\User\Application\DTO\UserListResponse;
 use App\User\Domain\Entity\User;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class GetAllUsersQueryHandler implements QueryHandlerInterface
 {
     public function __construct(
         private EntityManagerInterface  $entityManager,
         private UserRepositoryInterface $userRepository,
-        private TagAwareCacheInterface  $userCache,
     )
     {
     }
@@ -24,30 +22,20 @@ class GetAllUsersQueryHandler implements QueryHandlerInterface
     {
         $pagination = $query->pagination;
 
-        $cacheKey = sprintf(
-            'users_all_page_%d_limit_%d',
-            $pagination->getPage(),
-            $pagination->getLimit()
-        );
+        $qb = $this->entityManager->createQueryBuilder()
+            ->select('u')
+            ->from(User::class, 'u');
 
-        return $this->userCache->get($cacheKey, function ($item) use ($pagination) {
-            $item->tag(['users']);
+        $total = $this->userRepository->countAll();
 
-            $qb = $this->entityManager->createQueryBuilder()
-                ->select('u')
-                ->from(User::class, 'u');
+        $users = $qb
+            ->orderBy('u.id', 'ASC')
+            ->setFirstResult($pagination->getOffset())
+            ->setMaxResults($pagination->getLimit())
+            ->getQuery()
+            ->getResult();
 
-            $total = $this->userRepository->countAll();
-
-            $users = $qb
-                ->orderBy('u.id', 'ASC')
-                ->setFirstResult($pagination->getOffset())
-                ->setMaxResults($pagination->getLimit())
-                ->getQuery()
-                ->getResult();
-
-            $userListResponse = new UserListResponse($users);
-            return new PaginatedResponse($userListResponse, $total, $pagination->getPage(), $pagination->getLimit());
-        });
+        $userListResponse = new UserListResponse($users);
+        return new PaginatedResponse($userListResponse, $total, $pagination->getPage(), $pagination->getLimit());
     }
 }

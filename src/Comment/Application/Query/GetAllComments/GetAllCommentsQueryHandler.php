@@ -3,7 +3,6 @@
 namespace App\Comment\Application\Query\GetAllComments;
 
 use App\Comment\Application\DTO\CommentListResponse;
-use App\Comment\Domain\Entity\Comment;
 use App\Comment\Domain\Repository\CommentRepositoryInterface;
 use App\Comment\Infrastructure\Query\CommentQueryBuilder;
 use App\Shared\Application\DTO\PaginatedResponse;
@@ -15,7 +14,6 @@ use App\User\Domain\Entity\User;
 use App\User\Domain\Exception\UserNotFoundException;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 class GetAllCommentsQueryHandler implements QueryHandlerInterface
 {
@@ -24,7 +22,6 @@ class GetAllCommentsQueryHandler implements QueryHandlerInterface
         private TaskRepositoryInterface    $taskRepository,
         private UserRepositoryInterface    $userRepository,
         private EntityManagerInterface     $entityManager,
-        private TagAwareCacheInterface     $commentCache,
         private CommentQueryBuilder        $commentQueryBuilder,
     )
     {
@@ -43,15 +40,7 @@ class GetAllCommentsQueryHandler implements QueryHandlerInterface
             return $this->executeQuery($query, $currentUser, $pagination);
         }
 
-        $cacheKey = $this->generateCacheKey($currentUser, $pagination);
-
-        return $this->commentCache->get($cacheKey, function ($item) use ($query, $currentUser, $pagination) {
-            $result = $this->executeQuery($query, $currentUser, $pagination);
-
-            $this->addCacheTags($item, $currentUser);
-
-            return $result;
-        });
+        return $this->executeQuery($query, $currentUser, $pagination);
     }
 
     private function executeQuery(GetAllCommentsQuery $query, User $currentUser, $pagination): PaginatedResponse
@@ -93,32 +82,5 @@ class GetAllCommentsQueryHandler implements QueryHandlerInterface
 
         $commentListResponse = new CommentListResponse($comments);
         return new PaginatedResponse($commentListResponse, $total, $pagination->getPage(), $pagination->getLimit());
-    }
-
-    private function generateCacheKey(User $currentUser, $pagination): string
-    {
-        if ($currentUser->isAdmin()) {
-            return sprintf(
-                'comments_all_page_%d_limit_%d',
-                $pagination->getPage(),
-                $pagination->getLimit()
-            );
-        } else {
-            return sprintf(
-                'comments_user_%d_page_%d_limit_%d',
-                $currentUser->getId(),
-                $pagination->getPage(),
-                $pagination->getLimit()
-            );
-        }
-    }
-
-    private function addCacheTags(object $item, User $currentUser): void
-    {
-        if ($currentUser->isAdmin()) {
-            $item->tag(['comments']);
-        } else {
-            $item->tag(['user_' . $currentUser->getId()]);
-        }
     }
 }

@@ -29,11 +29,6 @@ interface CommentRepositoryInterface
     public function findByAuthor(User $author): array;
 
     /**
-     * @return array[]
-     */
-    public function findRelatedUsersByComment(int $commentId): array;
-
-    /**
      * @return int
      */
     public function countByTask(Task $task): int;

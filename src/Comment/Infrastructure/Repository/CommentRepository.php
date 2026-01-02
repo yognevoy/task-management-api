@@ -31,8 +31,7 @@ class CommentRepository extends ServiceEntityRepository implements CommentReposi
             ->setParameter('task', $task)
             ->orderBy('c.createdAt', 'ASC')
             ->getQuery()
-            ->getResult()
-        ;
+            ->getResult();
     }
 
     /**
@@ -47,8 +46,7 @@ class CommentRepository extends ServiceEntityRepository implements CommentReposi
             ->setParameter('author', $author)
             ->orderBy('c.createdAt', 'ASC')
             ->getQuery()
-            ->getResult()
-        ;
+            ->getResult();
     }
 
     /**
@@ -106,33 +104,6 @@ class CommentRepository extends ServiceEntityRepository implements CommentReposi
             ->setParameter('user', $user)
             ->getQuery()
             ->getSingleScalarResult();
-    }
-
-    /**
-     * Find user IDs related to a comment
-     *
-     * @param int $commentId
-     * @return array[]
-     */
-    public function findRelatedUsersByComment(int $commentId): array
-    {
-        return $this->createQueryBuilder('c')
-            ->select('
-                a.id AS author_id,
-                to.id AS owner_id,
-                ta.id AS assignee_id,
-                pm.id AS member_id
-            ')
-            ->leftJoin('c.task', 't')
-            ->leftJoin('c.author', 'a')
-            ->leftJoin('t.owner', 'to')
-            ->leftJoin('t.assignee', 'ta')
-            ->leftJoin('t.project', 'p')
-            ->leftJoin('p.members', 'pm')
-            ->where('c.id = :commentId')
-            ->setParameter('commentId', $commentId)
-            ->getQuery()
-            ->getArrayResult();
     }
 
     /**
