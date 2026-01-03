@@ -1384,6 +1384,14 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *     return_expiration?: scalar|null, // When true, the response will include the token expiration timestamp // Default: false
  *     return_expiration_parameter_name?: scalar|null, // The default response parameter name containing the refresh token expiration timestamp // Default: "refresh_token_expiration"
  * }
+ * @psalm-type LiipTestFixturesConfig = array{
+ *     cache_db?: array{
+ *         sqlite?: scalar|null, // Default: null
+ *         ...<mixed>
+ *     },
+ *     keep_database_and_schema?: bool, // Default: false
+ *     cache_metadata?: bool, // Default: true
+ * }
  * @psalm-type ConfigType = array{
  *     imports?: ImportsConfig,
  *     parameters?: ParametersConfig,
@@ -1405,6 +1413,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         security?: SecurityConfig,
  *         lexik_jwt_authentication?: LexikJwtAuthenticationConfig,
  *         gesdinet_jwt_refresh_token?: GesdinetJwtRefreshTokenConfig,
+ *         liip_test_fixtures?: LiipTestFixturesConfig,
  *     },
  *     "when@prod"?: array{
  *         imports?: ImportsConfig,
@@ -1427,6 +1436,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         security?: SecurityConfig,
  *         lexik_jwt_authentication?: LexikJwtAuthenticationConfig,
  *         gesdinet_jwt_refresh_token?: GesdinetJwtRefreshTokenConfig,
+ *         liip_test_fixtures?: LiipTestFixturesConfig,
  *     },
  *     ...<string, ExtensionType|array{ // extra keys must follow the when@%env% pattern or match an extension alias
  *         imports?: ImportsConfig,

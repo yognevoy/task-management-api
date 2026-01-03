@@ -56,6 +56,9 @@
             "config/packages/lexik_jwt_authentication.yaml"
         ]
     },
+    "liip/test-fixtures-bundle": {
+        "version": "3.7.0"
+    },
     "phpunit/phpunit": {
         "version": "12.5",
         "recipe": {
