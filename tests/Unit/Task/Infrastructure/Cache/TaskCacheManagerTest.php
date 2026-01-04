@@ -4,12 +4,15 @@ namespace App\Tests\Unit\Task\Infrastructure\Cache;
 
 use App\Task\Domain\Entity\Task;
 use App\Task\Infrastructure\Cache\TaskCacheManager;
+use App\Tests\Trait\EntityFactoryTrait;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Contracts\Cache\CacheInterface;
 
 class TaskCacheManagerTest extends TestCase
 {
+    use EntityFactoryTrait;
+
     private TaskCacheManager $cacheManager;
     private CacheInterface|MockObject $cache;
 
@@ -45,15 +48,5 @@ class TaskCacheManagerTest extends TestCase
             ->willReturn(true);
 
         $this->cacheManager->invalidateCache($task);
-    }
-
-    private function createTaskWithId(int $id): Task
-    {
-        $task = new Task();
-        $reflection = new \ReflectionClass($task);
-        $property = $reflection->getProperty('id');
-        $property->setValue($task, $id);
-
-        return $task;
     }
 }

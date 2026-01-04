@@ -2,9 +2,8 @@
 
 namespace App\Tests\Unit\Task\Infrastructure\Security\Voter;
 
-use App\Project\Domain\Entity\Project;
-use App\Task\Domain\Entity\Task;
 use App\Task\Infrastructure\Security\Voter\TaskVoter;
+use App\Tests\Trait\EntityFactoryTrait;
 use App\User\Domain\Entity\User;
 use App\User\Domain\Enum\UserRole;
 use PHPUnit\Framework\TestCase;
@@ -13,6 +12,8 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 class TaskVoterTest extends TestCase
 {
+    use EntityFactoryTrait;
+
     private TaskVoter $voter;
 
     protected function setUp(): void
@@ -22,11 +23,13 @@ class TaskVoterTest extends TestCase
 
     public function testAdminUserCanViewTask(): void
     {
-        $adminUser = $this->createUserWithId(1, 'admin@example.com');
+        $adminUser = $this->createUserWithId(1);
+        $adminUser->setEmail('admin@example.com');
         $adminUser->addRole(UserRole::ADMIN);
 
         $task = $this->createTaskWithId(1);
-        $owner = $this->createUserWithId(2, 'owner@example.com');
+        $owner = $this->createUserWithId(2);
+        $owner->setEmail('owner@example.com');
         $task->setOwner($owner);
 
         $token = $this->createStub(TokenInterface::class);
@@ -41,11 +44,13 @@ class TaskVoterTest extends TestCase
 
     public function testAdminUserCanEditTask(): void
     {
-        $adminUser = $this->createUserWithId(1, 'admin@example.com');
+        $adminUser = $this->createUserWithId(1);
+        $adminUser->setEmail('admin@example.com');
         $adminUser->addRole(UserRole::ADMIN);
 
         $task = $this->createTaskWithId(1);
-        $owner = $this->createUserWithId(2, 'owner@example.com');
+        $owner = $this->createUserWithId(2);
+        $owner->setEmail('owner@example.com');
         $task->setOwner($owner);
 
         $token = $this->createStub(TokenInterface::class);
@@ -60,11 +65,13 @@ class TaskVoterTest extends TestCase
 
     public function testAdminUserCanDeleteTask(): void
     {
-        $adminUser = $this->createUserWithId(1, 'admin@example.com');
+        $adminUser = $this->createUserWithId(1);
+        $adminUser->setEmail('admin@example.com');
         $adminUser->addRole(UserRole::ADMIN);
 
         $task = $this->createTaskWithId(1);
-        $owner = $this->createUserWithId(2, 'owner@example.com');
+        $owner = $this->createUserWithId(2);
+        $owner->setEmail('owner@example.com');
         $task->setOwner($owner);
 
         $token = $this->createStub(TokenInterface::class);
@@ -79,15 +86,16 @@ class TaskVoterTest extends TestCase
 
     public function testTaskOwnerCanViewOwnTask(): void
     {
-        $ownerUser = $this->createUserWithId(1, 'owner@example.com');
+        $owner = $this->createUserWithId(1);
+        $owner->setEmail('owner@example.com');
 
         $task = $this->createTaskWithId(1);
-        $task->setOwner($ownerUser);
+        $task->setOwner($owner);
 
         $token = $this->createStub(TokenInterface::class);
         $token
             ->method('getUser')
-            ->willReturn($ownerUser);
+            ->willReturn($owner);
 
         $result = $this->voter->vote($token, $task, [TaskVoter::VIEW]);
 
@@ -96,15 +104,16 @@ class TaskVoterTest extends TestCase
 
     public function testTaskOwnerCanEditOwnTask(): void
     {
-        $ownerUser = $this->createUserWithId(1, 'owner@example.com');
+        $owner = $this->createUserWithId(1);
+        $owner->setEmail('owner@example.com');
 
         $task = $this->createTaskWithId(1);
-        $task->setOwner($ownerUser);
+        $task->setOwner($owner);
 
         $token = $this->createStub(TokenInterface::class);
         $token
             ->method('getUser')
-            ->willReturn($ownerUser);
+            ->willReturn($owner);
 
         $result = $this->voter->vote($token, $task, [TaskVoter::EDIT]);
 
@@ -113,15 +122,16 @@ class TaskVoterTest extends TestCase
 
     public function testTaskOwnerCanDeleteOwnTask(): void
     {
-        $ownerUser = $this->createUserWithId(1, 'owner@example.com');
+        $owner = $this->createUserWithId(1);
+        $owner->setEmail('owner@example.com');
 
         $task = $this->createTaskWithId(1);
-        $task->setOwner($ownerUser);
+        $task->setOwner($owner);
 
         $token = $this->createStub(TokenInterface::class);
         $token
             ->method('getUser')
-            ->willReturn($ownerUser);
+            ->willReturn($owner);
 
         $result = $this->voter->vote($token, $task, [TaskVoter::DELETE]);
 
@@ -130,8 +140,11 @@ class TaskVoterTest extends TestCase
 
     public function testProjectOwnerCanViewTask(): void
     {
-        $projectOwner = $this->createUserWithId(1, 'project_owner@example.com');
-        $taskOwner = $this->createUserWithId(2, 'task_owner@example.com');
+        $projectOwner = $this->createUserWithId(1);
+        $projectOwner->setEmail('project_owner@example.com');
+
+        $taskOwner = $this->createUserWithId(2);
+        $taskOwner->setEmail('task_owner@example.com');
 
         $project = $this->createProjectWithId(1);
         $project->setOwner($projectOwner);
@@ -152,8 +165,11 @@ class TaskVoterTest extends TestCase
 
     public function testProjectOwnerCannotEditTask(): void
     {
-        $projectOwner = $this->createUserWithId(1, 'project_owner@example.com');
-        $taskOwner = $this->createUserWithId(2, 'task_owner@example.com');
+        $projectOwner = $this->createUserWithId(1);
+        $projectOwner->setEmail('project_owner@example.com');
+
+        $taskOwner = $this->createUserWithId(2);
+        $taskOwner->setEmail('task_owner@example.com');
 
         $project = $this->createProjectWithId(1);
         $project->setOwner($projectOwner);
@@ -174,8 +190,11 @@ class TaskVoterTest extends TestCase
 
     public function testProjectOwnerCannotDeleteTask(): void
     {
-        $projectOwner = $this->createUserWithId(1, 'project_owner@example.com');
-        $taskOwner = $this->createUserWithId(2, 'task_owner@example.com');
+        $projectOwner = $this->createUserWithId(1);
+        $projectOwner->setEmail('project_owner@example.com');
+
+        $taskOwner = $this->createUserWithId(2);
+        $taskOwner->setEmail('task_owner@example.com');
 
         $project = $this->createProjectWithId(1);
         $project->setOwner($projectOwner);
@@ -196,11 +215,15 @@ class TaskVoterTest extends TestCase
 
     public function testOtherUserCannotAccessTask(): void
     {
-        $otherUser = $this->createUserWithId(1, 'other@example.com');
-        $taskOwner = $this->createUserWithId(2, 'task_owner@example.com');
+        $otherUser = $this->createUserWithId(1);
+        $otherUser->setEmail('other@example.com');
+
+        $taskOwner = $this->createUserWithId(2);
+        $taskOwner->setEmail('task_owner@example.com');
 
         $project = $this->createProjectWithId(1);
-        $projectOwner = $this->createUserWithId(3, 'project_owner@example.com');
+        $projectOwner = $this->createUserWithId(3);
+        $projectOwner->setEmail('project_owner@example.com');
         $project->setOwner($projectOwner);
 
         $task = $this->createTaskWithId(1);
@@ -215,39 +238,5 @@ class TaskVoterTest extends TestCase
         $result = $this->voter->vote($token, $task, [TaskVoter::VIEW]);
 
         $this->assertEquals(Voter::ACCESS_DENIED, $result);
-    }
-
-    private function createUserWithId(int $id, string $email = 'test@example.com'): User
-    {
-        $user = new User();
-        $user->setEmail($email);
-
-        $reflection = new \ReflectionClass($user);
-        $property = $reflection->getProperty('id');
-        $property->setValue($user, $id);
-
-        return $user;
-    }
-
-    private function createProjectWithId(int $id): Project
-    {
-        $project = new Project();
-
-        $reflection = new \ReflectionClass($project);
-        $property = $reflection->getProperty('id');
-        $property->setValue($project, $id);
-
-        return $project;
-    }
-
-    private function createTaskWithId(int $id): Task
-    {
-        $task = new Task();
-
-        $reflection = new \ReflectionClass($task);
-        $property = $reflection->getProperty('id');
-        $property->setValue($task, $id);
-
-        return $task;
     }
 }

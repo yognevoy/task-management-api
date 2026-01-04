@@ -8,6 +8,7 @@ use App\Task\Domain\Entity\Task;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\Task\Infrastructure\Cache\TaskCacheManager;
+use App\Tests\Trait\EntityFactoryTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -16,6 +17,8 @@ use PHPUnit\Framework\TestCase;
 #[AllowMockObjectsWithoutExpectations]
 class DeleteTaskCommandHandlerTest extends TestCase
 {
+    use EntityFactoryTrait;
+
     private DeleteTaskCommandHandler $handler;
     private TaskRepositoryInterface|MockObject $taskRepository;
     private EntityManagerInterface|MockObject $entityManager;
@@ -79,16 +82,5 @@ class DeleteTaskCommandHandlerTest extends TestCase
             ->willReturn(null);
 
         ($this->handler)($command);
-    }
-
-    private function createTaskWithId(int $id): Task
-    {
-        $task = new Task();
-
-        $reflection = new \ReflectionClass($task);
-        $property = $reflection->getProperty('id');
-        $property->setValue($task, $id);
-
-        return $task;
     }
 }

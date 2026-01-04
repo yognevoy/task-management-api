@@ -2,7 +2,6 @@
 
 namespace App\Tests\Unit\Task\Application\Command\CreateTask;
 
-use App\Project\Domain\Entity\Project;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Shared\Domain\Exception\AccessDeniedException;
 use App\Task\Application\Command\CreateTask\CreateTaskCommand;
@@ -11,6 +10,7 @@ use App\Task\Application\DTO\TaskResponse;
 use App\Task\Domain\Entity\Task;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\Task\Infrastructure\Cache\TaskCacheManager;
+use App\Tests\Trait\EntityFactoryTrait;
 use App\User\Domain\Entity\User;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,6 +21,8 @@ use PHPUnit\Framework\TestCase;
 #[AllowMockObjectsWithoutExpectations]
 class CreateTaskCommandHandlerTest extends TestCase
 {
+    use EntityFactoryTrait;
+
     private CreateTaskCommandHandler $handler;
     private TaskRepositoryInterface|MockObject $taskRepository;
     private UserRepositoryInterface|MockObject $userRepository;
@@ -207,27 +209,5 @@ class CreateTaskCommandHandlerTest extends TestCase
             ->willReturn($project);
 
         ($this->handler)($command);
-    }
-
-    private function createUserWithId(int $id): User
-    {
-        $user = new User();
-
-        $reflection = new \ReflectionClass($user);
-        $property = $reflection->getProperty('id');
-        $property->setValue($user, $id);
-
-        return $user;
-    }
-
-    private function createProjectWithId(int $id): Project
-    {
-        $project = new Project();
-
-        $reflection = new \ReflectionClass($project);
-        $property = $reflection->getProperty('id');
-        $property->setValue($project, $id);
-
-        return $project;
     }
 }

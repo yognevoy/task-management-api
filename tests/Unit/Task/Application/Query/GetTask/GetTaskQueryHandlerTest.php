@@ -8,6 +8,7 @@ use App\Task\Application\Query\GetTask\GetTaskQueryHandler;
 use App\Task\Domain\Entity\Task;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
+use App\Tests\Trait\EntityFactoryTrait;
 use App\User\Domain\Entity\User;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -17,6 +18,8 @@ use Symfony\Contracts\Cache\CacheInterface;
 #[AllowMockObjectsWithoutExpectations]
 class GetTaskQueryHandlerTest extends TestCase
 {
+    use EntityFactoryTrait;
+
     private GetTaskQueryHandler $handler;
     private TaskRepositoryInterface|MockObject $taskRepository;
     private CacheInterface|MockObject $taskCache;
@@ -109,27 +112,5 @@ class GetTaskQueryHandlerTest extends TestCase
 
         $this->assertInstanceOf(TaskResponse::class, $result);
         $this->assertEquals(1, $result->id);
-    }
-
-    private function createUserWithId(int $id): User
-    {
-        $user = new User();
-
-        $reflection = new \ReflectionClass($user);
-        $property = $reflection->getProperty('id');
-        $property->setValue($user, $id);
-
-        return $user;
-    }
-
-    private function createTaskWithId(int $id): Task
-    {
-        $task = new Task();
-
-        $reflection = new \ReflectionClass($task);
-        $property = $reflection->getProperty('id');
-        $property->setValue($task, $id);
-
-        return $task;
     }
 }
