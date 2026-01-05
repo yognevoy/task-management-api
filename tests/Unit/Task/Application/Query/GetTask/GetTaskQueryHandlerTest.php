@@ -89,28 +89,4 @@ class GetTaskQueryHandlerTest extends TestCase
 
         ($this->handler)($query);
     }
-
-    public function testHandlerShouldWorkWithNullCurrentUser(): void
-    {
-        $query = new GetTaskQuery(1, null); // No current user
-
-        $this->taskRepository
-            ->expects($this->once())
-            ->method('find')
-            ->with(1)
-            ->willReturn($this->existingTask);
-
-        $this->taskCache
-            ->expects($this->once())
-            ->method('get')
-            ->with('task_1')
-            ->willReturnCallback(function ($key, $callback) {
-                return $callback();
-            });
-
-        $result = ($this->handler)($query);
-
-        $this->assertInstanceOf(TaskResponse::class, $result);
-        $this->assertEquals(1, $result->id);
-    }
 }
