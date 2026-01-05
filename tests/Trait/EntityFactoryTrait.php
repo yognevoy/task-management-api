@@ -9,7 +9,7 @@ use App\User\Domain\Entity\User;
 
 trait EntityFactoryTrait
 {
-    protected function createTaskWithId(int $id): Task
+    private function createTaskWithId(int $id): Task
     {
         $task = new Task();
 
