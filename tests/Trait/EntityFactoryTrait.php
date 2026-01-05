@@ -2,6 +2,7 @@
 
 namespace App\Tests\Trait;
 
+use App\Comment\Domain\Entity\Comment;
 use App\Project\Domain\Entity\Project;
 use App\Task\Domain\Entity\Task;
 use App\User\Domain\Entity\User;
@@ -39,5 +40,16 @@ trait EntityFactoryTrait
         $property->setValue($project, $id);
 
         return $project;
+    }
+
+    private function createCommentWithId(int $id): Comment
+    {
+        $comment = new Comment();
+
+        $reflection = new \ReflectionClass($comment);
+        $property = $reflection->getProperty('id');
+        $property->setValue($comment, $id);
+
+        return $comment;
     }
 }
