@@ -65,8 +65,6 @@ class DeleteTaskCommandHandlerTest extends TestCase
             ->with($this->equalTo($this->existingTask));
 
         ($this->handler)($command);
-
-        $this->assertTrue(true);
     }
 
     public function testHandlerShouldThrowTaskNotFoundExceptionWhenTaskDoesNotExist(): void

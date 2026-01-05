@@ -87,8 +87,6 @@ class DeleteUserCommandHandlerTest extends TestCase
             ->with($this->equalTo($this->existingUser));
 
         ($this->handler)($command);
-
-        $this->assertTrue(true);
     }
 
     public function testHandlerShouldThrowUserNotFoundExceptionWhenUserDoesNotExist(): void

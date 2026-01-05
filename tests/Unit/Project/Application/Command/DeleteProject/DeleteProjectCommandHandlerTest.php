@@ -76,8 +76,6 @@ class DeleteProjectCommandHandlerTest extends TestCase
             ->with($this->equalTo($this->existingProject));
 
         ($this->handler)($command);
-
-        $this->assertTrue(true);
     }
 
     public function testHandlerShouldThrowProjectNotFoundExceptionWhenProjectDoesNotExist(): void
