@@ -233,12 +233,7 @@ class Task
 
     public function removeComment(Comment $comment): static
     {
-        if ($this->comments->removeElement($comment)) {
-            // set the owning side to null (unless already changed)
-            if ($comment->getTask() === $this) {
-                $comment->setTask(null);
-            }
-        }
+        $this->comments->removeElement($comment);
 
         return $this;
     }
