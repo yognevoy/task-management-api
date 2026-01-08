@@ -17,7 +17,6 @@ class CreateUserRequest
     #[Assert\Length(max: 255, maxMessage: 'Password cannot exceed {{ limit }} characters')]
     public string $password;
 
-    #[Assert\Optional]
     #[Assert\All([
         new Assert\Choice(callback: [UserRole::class, 'toValues'], message: 'Invalid role value')
     ])]

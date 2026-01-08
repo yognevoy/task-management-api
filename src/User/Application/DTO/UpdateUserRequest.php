@@ -7,17 +7,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class UpdateUserRequest
 {
-    #[Assert\Optional]
     #[Assert\Email(message: 'Email is not valid')]
     #[Assert\Length(max: 255, maxMessage: 'Email cannot exceed {{ limit }} characters')]
     public ?string $email = null;
 
-    #[Assert\Optional]
     #[Assert\Length(min: 6, minMessage: 'Password must be at least {{ limit }} characters long')]
     #[Assert\Length(max: 255, maxMessage: 'Password cannot exceed {{ limit }} characters')]
     public ?string $password = null;
 
-    #[Assert\Optional]
     #[Assert\All([
         new Assert\Choice(callback: [UserRole::class, 'toValues'], message: 'Invalid role value')
     ])]
