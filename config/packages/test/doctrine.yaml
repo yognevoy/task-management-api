@@ -1,0 +1,7 @@
+doctrine:
+    dbal:
+        default_connection: default
+        connections:
+            default:
+                use_savepoints: true
+                url: '%env(resolve:DATABASE_URL)%'
