@@ -7,17 +7,17 @@
         "php": ">=8.1",
         "ext-ctype": "*",
         "ext-iconv": "*",
-        "doctrine/doctrine-bundle": "*",
-        "doctrine/doctrine-migrations-bundle": "^3.0",
-        "doctrine/orm": "^2.15",
-        "gesdinet/jwt-refresh-token-bundle": "*",
-        "lexik/jwt-authentication-bundle": "^3.1",
-        "phpdocumentor/reflection-docblock": "^5.3",
-        "phpstan/phpdoc-parser": "^1.0",
+        "doctrine/doctrine-bundle": ">=2.18.2",
+        "doctrine/doctrine-migrations-bundle": "^3.7",
+        "doctrine/orm": "^2.20.9",
+        "gesdinet/jwt-refresh-token-bundle": ">=1.5",
+        "lexik/jwt-authentication-bundle": "^3.2",
+        "phpdocumentor/reflection-docblock": "^5.6.6",
+        "phpstan/phpdoc-parser": "^1.33",
         "symfony/cache": "7.4.*",
         "symfony/console": "7.4.*",
         "symfony/dotenv": "7.4.*",
-        "symfony/flex": "^2",
+        "symfony/flex": "^2.10",
         "symfony/framework-bundle": "7.4.*",
         "symfony/messenger": "7.4.*",
         "symfony/property-access": "7.4.*",
@@ -29,12 +29,12 @@
         "symfony/yaml": "7.4.*"
     },
     "require-dev": {
-        "dama/doctrine-test-bundle": "^8.4",
+        "dama/doctrine-test-bundle": "^8.4.1",
         "liip/test-fixtures-bundle": "^3.7",
-        "phpunit/phpunit": "^12.5",
+        "phpunit/phpunit": "^12.5.4",
         "symfony/browser-kit": "7.4.*",
         "symfony/css-selector": "7.4.*",
-        "symfony/maker-bundle": "^1.50"
+        "symfony/maker-bundle": "^1.65.1"
     },
     "config": {
         "allow-plugins": {
