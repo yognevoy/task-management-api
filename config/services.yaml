@@ -26,6 +26,10 @@ services:
         tags:
             - { name: kernel.event_listener, event: kernel.exception }
 
+    App\User\Infrastructure\EventListener\LoginValidationListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, priority: 100 }
+
     _instanceof:
         # all services implementing the CommandHandlerInterface
         # will be registered on the command.bus bus
