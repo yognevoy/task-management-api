@@ -25,9 +25,16 @@ class ExceptionEventListener
         }
 
         if ($exception instanceof HandlerFailedException) {
+            $previous = $exception->getPrevious();
+            $code = Response::HTTP_INTERNAL_SERVER_ERROR;
+
+            if ($previous instanceof HttpExceptionInterface) {
+                $code = $previous->getStatusCode();
+            }
+
             $response = new JsonResponse(
-                ['error' => $exception->getPrevious()->getMessage()],
-                Response::HTTP_INTERNAL_SERVER_ERROR
+                ['error' => $previous->getMessage()],
+                $code
             );
             $event->setResponse($response);
             $event->stopPropagation();
