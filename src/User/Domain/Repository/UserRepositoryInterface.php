@@ -20,4 +20,9 @@ interface UserRepositoryInterface
      * @return int
      */
     public function countAll(): int;
+
+    /**
+     * @return User|null
+     */
+    public function findOneByEmail(string $email): ?User;
 }
