@@ -61,6 +61,14 @@ class BaseTestCase extends WebTestCase
     }
 
     /**
+     * Create a client without authentication credentials.
+     */
+    protected function createUnauthenticatedClient(): KernelBrowser
+    {
+        return $this->client;
+    }
+
+    /**
      * Get the entity manager.
      */
     protected function getEntityManager(): EntityManagerInterface
