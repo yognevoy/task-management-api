@@ -7,6 +7,7 @@ use App\User\Application\Command\RegisterUser\RegisterUserCommand;
 use App\User\Application\Command\RegisterUser\RegisterUserCommandHandler;
 use App\User\Application\DTO\UserResponse;
 use App\User\Domain\Entity\User;
+use App\User\Domain\Repository\UserRepositoryInterface;
 use App\User\Infrastructure\Cache\UserCacheManager;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -22,17 +23,20 @@ class RegisterUserCommandHandlerTest extends TestCase
     private RegisterUserCommandHandler $handler;
     private UserPasswordHasherInterface|MockObject $passwordEncoder;
     private EntityManagerInterface|MockObject $entityManager;
+    private UserRepositoryInterface|MockObject $userRepository;
     private UserCacheManager|MockObject $userCacheManager;
 
     protected function setUp(): void
     {
         $this->passwordEncoder = $this->createMock(UserPasswordHasherInterface::class);
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
+        $this->userRepository = $this->createMock(UserRepositoryInterface::class);
         $this->userCacheManager = $this->createMock(UserCacheManager::class);
 
         $this->handler = new RegisterUserCommandHandler(
             $this->passwordEncoder,
             $this->entityManager,
+            $this->userRepository,
             $this->userCacheManager
         );
     }
