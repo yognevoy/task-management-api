@@ -16,3 +16,6 @@ framework:
             comment_cache:
                 adapter: cache.app
                 default_lifetime: 3600
+            config_cache:
+                adapter: cache.app
+                default_lifetime: 7200

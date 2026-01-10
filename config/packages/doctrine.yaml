@@ -5,6 +5,9 @@ doctrine:
         # IMPORTANT: You MUST configure your server version,
         # either here or in the DATABASE_URL env var (see .env file)
         server_version: '8.0'
+
+        types:
+            config_value: App\Config\Infrastructure\Persistence\Doctrine\Type\ConfigValueType
     orm:
         default_entity_manager: default
         entity_managers:
@@ -40,3 +43,9 @@ doctrine:
                         dir: '%kernel.project_dir%/src/Comment/Infrastructure/Persistence/Doctrine/Mapping'
                         prefix: 'App\Comment\Domain\Entity'
                         alias: Comment
+                    Config:
+                        type: xml
+                        is_bundle: false
+                        dir: '%kernel.project_dir%/src/Config/Infrastructure/Persistence/Doctrine/Mapping'
+                        prefix: 'App\Config\Domain\Entity'
+                        alias: Config
