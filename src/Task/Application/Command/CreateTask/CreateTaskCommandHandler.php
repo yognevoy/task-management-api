@@ -2,6 +2,7 @@
 
 namespace App\Task\Application\Command\CreateTask;
 
+use App\Config\Application\Service\ConfigurationService;
 use App\Project\Domain\Exception\ProjectNotFoundException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Shared\Application\Command\CommandHandlerInterface;
@@ -11,6 +12,7 @@ use App\Task\Domain\Entity\Task;
 use App\Task\Domain\Enum\TaskPriority;
 use App\Task\Domain\Enum\TaskStatus;
 use App\Task\Domain\Enum\TaskType;
+use App\Task\Domain\Exception\MaxAssignedTasksReachedException;
 use App\Task\Domain\Exception\ParentTaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
 use App\Task\Infrastructure\Cache\TaskCacheManager;
@@ -27,6 +29,7 @@ class CreateTaskCommandHandler implements CommandHandlerInterface
         private ProjectRepositoryInterface $projectRepository,
         private EntityManagerInterface     $entityManager,
         private TaskCacheManager           $taskCacheManager,
+        private ConfigurationService       $configurationService,
     )
     {
     }
@@ -91,6 +94,13 @@ class CreateTaskCommandHandler implements CommandHandlerInterface
 
             if (!$assignee) {
                 throw new UserNotFoundException();
+            }
+
+            $maxAssignedTasks = $this->configurationService->getMaxAssignedTasksPerUser();
+            $assignedTaskCount = $this->taskRepository->countByUser($assignee);
+
+            if ($assignedTaskCount >= $maxAssignedTasks) {
+                throw new MaxAssignedTasksReachedException($maxAssignedTasks);
             }
 
             $task->setAssignee($assignee);
