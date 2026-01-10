@@ -2,10 +2,12 @@
 
 namespace App\User\Application\Command\RegisterUser;
 
+use App\Config\Application\Service\ConfigurationService;
 use App\Shared\Application\Command\CommandHandlerInterface;
 use App\User\Application\DTO\UserResponse;
 use App\User\Domain\Entity\User;
 use App\User\Domain\Exception\UserAlreadyExistsException;
+use App\User\Domain\Exception\UserRegistrationDisabledException;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use App\User\Infrastructure\Cache\UserCacheManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,12 +20,17 @@ class RegisterUserCommandHandler implements CommandHandlerInterface
         private EntityManagerInterface      $entityManager,
         private UserRepositoryInterface     $userRepository,
         private UserCacheManager            $userCacheManager,
+        private ConfigurationService        $configurationService,
     )
     {
     }
 
     public function __invoke(RegisterUserCommand $command): UserResponse
     {
+        if (!$this->configurationService->isUserRegistrationAllowed()) {
+            throw new UserRegistrationDisabledException();
+        }
+
         $existingUser = $this->userRepository->findOneByEmail($command->email);
         if ($existingUser !== null) {
             throw new UserAlreadyExistsException();
