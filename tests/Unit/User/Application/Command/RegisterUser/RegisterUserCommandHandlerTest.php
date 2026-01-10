@@ -2,11 +2,13 @@
 
 namespace App\Tests\Unit\User\Application\Command\RegisterUser;
 
+use App\Config\Application\Service\ConfigurationService;
 use App\Tests\Trait\EntityFactoryTrait;
 use App\User\Application\Command\RegisterUser\RegisterUserCommand;
 use App\User\Application\Command\RegisterUser\RegisterUserCommandHandler;
 use App\User\Application\DTO\UserResponse;
 use App\User\Domain\Entity\User;
+use App\User\Domain\Exception\UserRegistrationDisabledException;
 use App\User\Domain\Repository\UserRepositoryInterface;
 use App\User\Infrastructure\Cache\UserCacheManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,6 +27,7 @@ class RegisterUserCommandHandlerTest extends TestCase
     private EntityManagerInterface|MockObject $entityManager;
     private UserRepositoryInterface|MockObject $userRepository;
     private UserCacheManager|MockObject $userCacheManager;
+    private ConfigurationService|MockObject $configurationService;
 
     protected function setUp(): void
     {
@@ -32,12 +35,14 @@ class RegisterUserCommandHandlerTest extends TestCase
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->userRepository = $this->createMock(UserRepositoryInterface::class);
         $this->userCacheManager = $this->createMock(UserCacheManager::class);
+        $this->configurationService = $this->createMock(ConfigurationService::class);
 
         $this->handler = new RegisterUserCommandHandler(
             $this->passwordEncoder,
             $this->entityManager,
             $this->userRepository,
-            $this->userCacheManager
+            $this->userCacheManager,
+            $this->configurationService
         );
     }
 
@@ -48,6 +53,11 @@ class RegisterUserCommandHandlerTest extends TestCase
             'password123',
             ['ROLE_USER']
         );
+
+        $this->configurationService
+            ->expects($this->once())
+            ->method('isUserRegistrationAllowed')
+            ->willReturn(true);
 
         $user = null;
         $persistCallback = function ($persistedUser) use (&$user) {
@@ -102,6 +112,11 @@ class RegisterUserCommandHandlerTest extends TestCase
         // No roles specified
         );
 
+        $this->configurationService
+            ->expects($this->once())
+            ->method('isUserRegistrationAllowed')
+            ->willReturn(true);
+
         $user = null;
         $persistCallback = function ($persistedUser) use (&$user) {
             $user = $persistedUser;
@@ -145,5 +160,23 @@ class RegisterUserCommandHandlerTest extends TestCase
         $this->assertEquals(2, $result->id);
         $this->assertEquals('test2@example.com', $result->email);
         $this->assertEquals(['ROLE_USER'], $result->roles);
+    }
+
+    public function testHandlerShouldThrowUserRegistrationDisabledExceptionWhenRegistrationIsDisabled(): void
+    {
+        $command = new RegisterUserCommand(
+            'test@example.com',
+            'password123',
+            ['ROLE_USER']
+        );
+
+        $this->configurationService
+            ->expects($this->once())
+            ->method('isUserRegistrationAllowed')
+            ->willReturn(false);
+
+        $this->expectException(UserRegistrationDisabledException::class);
+
+        ($this->handler)($command);
     }
 }

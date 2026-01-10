@@ -2,6 +2,7 @@
 
 namespace App\Tests\Unit\Task\Application\Command\UpdateTask;
 
+use App\Config\Application\Service\ConfigurationService;
 use App\Project\Domain\Exception\ProjectNotFoundException;
 use App\Project\Domain\Repository\ProjectRepositoryInterface;
 use App\Shared\Domain\Exception\AccessDeniedException;
@@ -13,6 +14,7 @@ use App\Task\Domain\Enum\TaskPriority;
 use App\Task\Domain\Enum\TaskStatus;
 use App\Task\Domain\Enum\TaskType;
 use App\Task\Domain\Exception\CircularTaskReferenceException;
+use App\Task\Domain\Exception\MaxAssignedTasksReachedException;
 use App\Task\Domain\Exception\ParentTaskNotFoundException;
 use App\Task\Domain\Exception\TaskNotFoundException;
 use App\Task\Domain\Repository\TaskRepositoryInterface;
@@ -37,6 +39,7 @@ class UpdateTaskCommandHandlerTest extends TestCase
     private ProjectRepositoryInterface|MockObject $projectRepository;
     private EntityManagerInterface|MockObject $entityManager;
     private TaskCacheManager|MockObject $taskCacheManager;
+    private ConfigurationService|MockObject $configurationService;
     private User $currentUser;
     private Task $existingTask;
 
@@ -47,13 +50,15 @@ class UpdateTaskCommandHandlerTest extends TestCase
         $this->projectRepository = $this->createMock(ProjectRepositoryInterface::class);
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
         $this->taskCacheManager = $this->createMock(TaskCacheManager::class);
+        $this->configurationService = $this->createMock(ConfigurationService::class);
 
         $this->handler = new UpdateTaskCommandHandler(
             $this->taskRepository,
             $this->userRepository,
             $this->projectRepository,
             $this->entityManager,
-            $this->taskCacheManager
+            $this->taskCacheManager,
+            $this->configurationService
         );
 
         $this->currentUser = $this->createUserWithId(1);
@@ -381,6 +386,11 @@ class UpdateTaskCommandHandlerTest extends TestCase
             ->with($assigneeId)
             ->willReturn($assignee);
 
+        $this->configurationService
+            ->expects($this->once())
+            ->method('getMaxAssignedTasksPerUser')
+            ->willReturn(5);
+
         $this->entityManager
             ->expects($this->once())
             ->method('flush');
@@ -666,6 +676,57 @@ class UpdateTaskCommandHandlerTest extends TestCase
             ->method('find')
             ->with(999)
             ->willReturn(null);
+
+        ($this->handler)($command);
+    }
+
+    public function testHandlerShouldThrowMaxAssignedTasksReachedExceptionWhenUserReachesTaskLimit(): void
+    {
+        $assigneeId = 2;
+        $assignee = $this->createUserWithId($assigneeId);
+
+        $command = new UpdateTaskCommand(
+            1,
+            'Title',
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            $assigneeId,
+            null,
+            $this->currentUser
+        );
+
+        $this->taskRepository
+            ->expects($this->once())
+            ->method('find')
+            ->with(1)
+            ->willReturn($this->existingTask);
+
+        $this->userRepository
+            ->expects($this->once())
+            ->method('find')
+            ->with($assigneeId)
+            ->willReturn($assignee);
+
+        $this->configurationService
+            ->expects($this->once())
+            ->method('getMaxAssignedTasksPerUser')
+            ->willReturn(2);
+
+        $this->taskRepository
+            ->expects($this->once())
+            ->method('countByUser')
+            ->with($assignee)
+            ->willReturn(2);
+
+        $otherAssignee = $this->createUserWithId(999);
+        $this->existingTask->setAssignee($otherAssignee);
+
+        $this->expectException(MaxAssignedTasksReachedException::class);
 
         ($this->handler)($command);
     }

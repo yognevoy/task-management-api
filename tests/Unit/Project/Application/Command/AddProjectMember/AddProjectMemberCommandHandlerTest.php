@@ -2,6 +2,7 @@
 
 namespace App\Tests\Unit\Project\Application\Command\AddProjectMember;
 
+use App\Config\Application\Service\ConfigurationService;
 use App\Project\Application\Command\AddProjectMember\AddProjectMemberCommand;
 use App\Project\Application\Command\AddProjectMember\AddProjectMemberCommandHandler;
 use App\Project\Application\DTO\ProjectResponse;
@@ -29,6 +30,7 @@ class AddProjectMemberCommandHandlerTest extends TestCase
     private ProjectRepositoryInterface|MockObject $projectRepository;
     private UserRepositoryInterface|MockObject $userRepository;
     private ProjectCacheManager|MockObject $projectCacheManager;
+    private ConfigurationService|MockObject $configurationService;
     private Project $existingProject;
     private User $existingUser;
     private User $projectOwner;
@@ -39,12 +41,14 @@ class AddProjectMemberCommandHandlerTest extends TestCase
         $this->projectRepository = $this->createMock(ProjectRepositoryInterface::class);
         $this->userRepository = $this->createMock(UserRepositoryInterface::class);
         $this->projectCacheManager = $this->createMock(ProjectCacheManager::class);
+        $this->configurationService = $this->createMock(ConfigurationService::class);
 
         $this->handler = new AddProjectMemberCommandHandler(
             $this->entityManager,
             $this->projectRepository,
             $this->userRepository,
-            $this->projectCacheManager
+            $this->projectCacheManager,
+            $this->configurationService
         );
 
         $this->existingProject = $this->createProjectWithId(1);
@@ -69,6 +73,11 @@ class AddProjectMemberCommandHandlerTest extends TestCase
             ->method('find')
             ->with(2)
             ->willReturn($this->existingUser);
+
+        $this->configurationService
+            ->expects($this->once())
+            ->method('getMaxMembersPerProject')
+            ->willReturn(5);
 
         $this->entityManager
             ->expects($this->once())
@@ -139,6 +148,34 @@ class AddProjectMemberCommandHandlerTest extends TestCase
             ->method('find')
             ->with(1)
             ->willReturn($this->projectOwner);
+
+        ($this->handler)($command);
+    }
+
+    public function testHandlerShouldThrowInvalidMemberExceptionWhenProjectReachesMemberLimit(): void
+    {
+        $command = new AddProjectMemberCommand(1, 2);
+
+        $this->projectRepository
+            ->expects($this->once())
+            ->method('find')
+            ->with(1)
+            ->willReturn($this->existingProject);
+
+        $this->userRepository
+            ->expects($this->once())
+            ->method('find')
+            ->with(2)
+            ->willReturn($this->existingUser);
+
+        $this->configurationService
+            ->expects($this->once())
+            ->method('getMaxMembersPerProject')
+            ->willReturn(1);
+
+        $this->existingProject->addMember($this->createUserWithId(3));
+
+        $this->expectException(InvalidMemberException::class);
 
         ($this->handler)($command);
     }
