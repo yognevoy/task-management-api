@@ -2,6 +2,7 @@
 
 namespace App\Project\Application\Command\AddProjectMember;
 
+use App\Config\Application\Service\ConfigurationService;
 use App\Project\Application\DTO\ProjectResponse;
 use App\Project\Domain\Exception\InvalidMemberException;
 use App\Project\Domain\Exception\ProjectNotFoundException;
@@ -19,6 +20,7 @@ class AddProjectMemberCommandHandler implements CommandHandlerInterface
         private ProjectRepositoryInterface $projectRepository,
         private UserRepositoryInterface    $userRepository,
         private ProjectCacheManager        $projectCacheManager,
+        private ConfigurationService       $configurationService,
     )
     {
     }
@@ -37,6 +39,11 @@ class AddProjectMemberCommandHandler implements CommandHandlerInterface
 
         if ($project->getOwner() === $user) {
             throw InvalidMemberException::cannotAddOwnerAsMember();
+        }
+
+        $maxMembers = $this->configurationService->getMaxMembersPerProject();
+        if ($project->getMembers()->count() >= $maxMembers) {
+            throw InvalidMemberException::maxMembersReached($maxMembers);
         }
 
         $project->addMember($user);

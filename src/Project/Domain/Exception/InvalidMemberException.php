@@ -20,4 +20,9 @@ class InvalidMemberException extends HttpException
     {
         return new self('Cannot remove owner from project');
     }
+
+    public static function maxMembersReached(int $maxMembers): self
+    {
+        return new self("Maximum number of members ({$maxMembers}) reached for this project");
+    }
 }
