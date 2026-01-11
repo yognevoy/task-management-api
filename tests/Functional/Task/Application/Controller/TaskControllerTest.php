@@ -197,6 +197,6 @@ class TaskControllerTest extends BaseTestCase
 
         $responseData = json_decode($client->getResponse()->getContent(), true);
         self::assertIsArray($responseData['tasks']);
-        self::assertEmpty($responseData['tasks']);
+        self::assertNotEmpty($responseData['tasks']);
     }
 }
