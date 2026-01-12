@@ -283,6 +283,69 @@ The application uses JWT (JSON Web Token) for stateless authentication with refr
 
 The system implements role-based access control (RBAC) with different permission levels for users and administrators.
 
+## Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    USER {
+        int id PK
+        string email UK
+        string password
+        json roles
+        datetime created_at
+        datetime updated_at
+    }
+
+    PROJECT {
+        int id PK
+        string title
+        string description
+        int owner_id FK
+        datetime created_at
+        datetime updated_at
+    }
+
+    TASK {
+        int id PK
+        string title
+        string description
+        enum status
+        enum type
+        enum priority
+        int owner_id FK
+        int assignee_id FK
+        int parent_id FK
+        int project_id FK
+        datetime created_at
+        datetime updated_at
+        datetime due_date
+    }
+
+    COMMENT {
+        int id PK
+        string content
+        int author_id FK
+        int task_id FK
+        datetime created_at
+        datetime updated_at
+    }
+
+    CONFIGURATION {
+        int id PK
+        string key UK
+        string value
+        datetime created_at
+        datetime updated_at
+    }
+
+    USER ||--o{ TASK : owns
+    USER ||--o{ TASK : assigned_to
+    USER ||--o{ PROJECT : owns
+    USER ||--o{ COMMENT : authors
+    PROJECT ||--o{ TASK : contains
+    USER ||--o{ PROJECT : member_of
+```
+
 ## Testing
 
 ### Running Tests
