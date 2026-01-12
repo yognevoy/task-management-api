@@ -12,6 +12,7 @@ A task management system built with PHP and Symfony, following Domain-Driven Des
 - [API Documentation](#api-documentation)
 - [Architecture Overview](#architecture-overview)
 - [Authentication](#authentication)
+- [Entity Relationship Diagram](#entity-relationship-diagram)
 - [Testing](#testing)
 - [How to Contribute](#how-to-contribute)
 - [License](#license)
@@ -202,7 +203,7 @@ curl -X GET http://localhost:8000/api/tasks \
 ### Hexagonal Architecture
 
 This repository follows the Hexagonal Architecture pattern.
-With this, we can see that the current structure of a Bounded Context is:
+The structure of a Bounded Context is:
 
 ```scala
 $ tree -L 4 src
