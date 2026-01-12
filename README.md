@@ -277,9 +277,9 @@ The application supports event-driven architecture through the Symfony Messenger
 
 The application uses JWT (JSON Web Token) for stateless authentication with refresh token support. The authentication flow works as follows:
 
-1. **Login**: Users authenticate with credentials at `/api/login_check` to receive an access token
-2. **Access**: Include the JWT token in the `Authorization: Bearer [token]` header for protected endpoints
-3. **Refresh**: When the access token expires, use `/api/token/refresh` endpoint with the refresh token to get a new access token
+1. **Login**: User authenticates with credentials at `/api/login_check` to receive an access token
+2. **Access**: Users includes the JWT token in the `Authorization: Bearer [token]` header for protected endpoints
+3. **Refresh**: When the access token expires, user uses `/api/token/refresh` endpoint with the refresh token to get a new access token
 4. **Registration**: New users can register at `/api/register` endpoint
 
 The system implements role-based access control (RBAC) with different permission levels for users and administrators.
