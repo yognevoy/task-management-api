@@ -252,14 +252,14 @@ The application implements CQRS pattern to separate read and write operations. C
 
 ### Repository pattern
 
-Repositories follow a consistent interface pattern with methods like `find`, `findAll`, `findBy`. Domain repositories define the contract in the Domain layer, while implementations are in the Infrastructure layer using Doctrine ORM.
+Repositories follow a consistent interface pattern with methods like `find`, `findAll`, `findBy`. The domain repositories define contracts in the Domain layer, with implementations located in the Infrastructure layer.
 
-An example [here](src/User/Domain/Repository/UserRepositoryInterface.php)
-and its implementation [here](src/User/Infrastructure/Repository/UserRepository.php).
+An example [here](src/Task/Domain/Repository/TaskRepositoryInterface.php)
+and its implementation [here](src/Task/Infrastructure/Repository/TaskRepository.php).
 
 ### Entities
 
-An example of an entity [here](src/User/Domain/Entity/User.php). All entities follow domain-driven design principles with proper encapsulation and business logic.
+An example of an entity [here](src/Task/Domain/Entity/Task.php). All entities follow domain-driven design principles with proper encapsulation and business logic.
 
 ### Command Bus
 
