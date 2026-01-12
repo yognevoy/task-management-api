@@ -5,14 +5,14 @@ A task management system built with PHP and Symfony, following Domain-Driven Des
 ## Table of Contents
 - [Overview](#overview)
 - [Technology Stack](#technology-stack)
-- [Authentication](#authentication)
 - [Prerequisites](#prerequisites)
+- [Configuration](#configuration)
 - [Installation & Setup](#installation--setup)
 - [Running the Application](#running-the-application)
 - [API Documentation](#api-documentation)
 - [Architecture Overview](#architecture-overview)
+- [Authentication](#authentication)
 - [Testing](#testing)
-- [Configuration](#configuration)
 - [How to Contribute](#how-to-contribute)
 - [License](#license)
 
@@ -194,8 +194,8 @@ curl -X GET http://localhost:8000/api/tasks \
 
 - [User](src/User): User management and authentication functionality. Handles user registration, login, profile management, and role-based access control.
 - [Task](src/Task): Core task management features. Enables creating, updating, deleting, and organizing tasks with priorities, statuses, and due dates.
-- [Project](src/Project): Project organization capabilities. Allows grouping tasks into projects with team collaboration features and member management.
-- [Comment](src/Comment): Comment system for tasks and projects. Facilitates communication and discussion around specific items.
+- [Project](src/Project): Project management features. Enables organizing tasks into projects with team collaboration and member management.
+- [Comment](src/Comment): Comment system for tasks and projects. Allows adding comments for communication and discussion.
 - [Config](src/Config): Configuration management domain. Handles system-wide configuration values and settings with admin access controls.
 - [Shared](src/Shared): Shared Kernel: Common infrastructure and domain components shared between the different bounded contexts.
 
@@ -204,7 +204,7 @@ curl -X GET http://localhost:8000/api/tasks \
 This repository follows the Hexagonal Architecture pattern.
 With this, we can see that the current structure of a Bounded Context is:
 
-```
+```scala
 $ tree -L 4 src
 
 src
@@ -251,16 +251,14 @@ The application implements CQRS pattern to separate read and write operations. C
 
 ### Repository pattern
 
-Repositories try to be as simple as possible usually only containing 2 methods `find` and `save`.
-If we need some query with more filters we use the `Specification` pattern also known as `Criteria` pattern. So we add a
-`findAll` method with pagination support.
+Repositories follow a consistent interface pattern with methods like `find`, `findAll`, and `save`. Domain repositories define the contract in the Domain layer, while implementations are in the Infrastructure layer using Doctrine ORM.
 
-You can see an example [here](src/User/Domain/Repository/UserRepositoryInterface.php)
+An example [here](src/User/Domain/Repository/UserRepositoryInterface.php)
 and its implementation [here](src/User/Infrastructure/Repository/UserRepository.php).
 
-### Aggregates
+### Entities
 
-You can see an example of an aggregate [here](src/User/Domain/Entity/User.php). All aggregates follow domain-driven design principles with proper encapsulation and business logic.
+An example of an entity [here](src/User/Domain/Entity/User.php). All entities follow domain-driven design principles with proper encapsulation and business logic.
 
 ### Command Bus
 
@@ -284,71 +282,6 @@ The application uses JWT (JSON Web Token) for stateless authentication with refr
 4. **Registration**: New users can register at `/api/register` endpoint
 
 The system implements role-based access control (RBAC) with different permission levels for users and administrators.
-
-## Entity Relationship Diagram
-
-```mermaid
-erDiagram
-    USER {
-        int id PK
-        string email UK
-        string password
-        json roles
-        datetime created_at
-        datetime updated_at
-    }
-
-    PROJECT {
-        int id PK
-        string title
-        string description
-        int owner_id FK
-        datetime created_at
-        datetime updated_at
-    }
-
-    TASK {
-        int id PK
-        string title
-        string description
-        enum status
-        enum type
-        enum priority
-        int owner_id FK
-        int assignee_id FK
-        int parent_id FK
-        int project_id FK
-        datetime created_at
-        datetime updated_at
-        datetime due_date
-    }
-
-    COMMENT {
-        int id PK
-        string content
-        int author_id FK
-        int task_id FK
-        datetime created_at
-        datetime updated_at
-    }
-
-    CONFIGURATION {
-        int id PK
-        string key UK
-        string value
-        datetime created_at
-        datetime updated_at
-    }
-
-    USER ||--o{ TASK : owns
-    USER ||--o{ TASK : assigned_to
-    USER ||--o{ PROJECT : owns
-    USER ||--o{ COMMENT : authors
-    PROJECT ||--o{ TASK : contains
-    TASK ||--o{ TASK : parent_child
-    TASK ||--o{ COMMENT : has
-    USER ||--o{ PROJECT : member_of
-```
 
 ## Testing
 
