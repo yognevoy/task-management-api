@@ -208,50 +208,50 @@ With this, we can see that the current structure of a Bounded Context is:
 $ tree -L 4 src
 
 src
-|-- Task // Task subdomain / Bounded Context
-|   |-- Application // Application layer - use cases, DTOs, commands, queries
-|   |   |-- Command // Command handlers for write operations
-|   |   |   |-- CreateTask
-|   |   |   |   |-- CreateTaskCommand.php
-|   |   |   |   `-- CreateTaskCommandHandler.php
-|   |   |   `-- UpdateTask
-|   |   |       |-- UpdateTaskCommand.php
-|   |   |       `-- UpdateTaskCommandHandler.php
-|   |   |-- Query // Query handlers for read operations
-|   |   |   |-- GetTask
-|   |   |   |   |-- GetTaskQuery.php
-|   |   |   |   `-- GetTaskQueryHandler.php
-|   |   |   `-- GetAllTasks
-|   |   |       |-- GetAllTasksQuery.php
-|   |   |       `-- GetAllTasksQueryHandler.php
-|   |   `-- Controller // API controllers
-|   |       `-- TaskController.php
-|   |-- Domain // Domain layer - business logic and entities
-|   |   |-- Entity // Domain entities
-|   |   |   `-- Task.php
-|   |   |-- Enum // Domain enums
-|   |   |   |-- TaskPriority.php
-|   |   |   `-- TaskStatus.php
-|   |   `-- Repository // Repository interfaces
-|   |       `-- TaskRepositoryInterface.php
-|   `-- Infrastructure // Infrastructure layer - implementations
-|       |-- Repository // Repository implementations
-|       |   `-- TaskRepository.php
-|       `-- Persistence // Persistence configurations
-|           `-- Doctrine
-|               `-- Mapping
-|                   `-- Task.orm.xml
-`-- Shared // Shared Kernel: Common infrastructure and domain shared between the different Bounded Contexts
+├── Task // Task subdomain / Bounded Context
+│   ├── Application // Application layer - use cases, DTOs, commands, queries
+│   │   ├── Command // Command handlers for write operations
+│   │   │   ├── CreateTask
+│   │   │   │   ├── CreateTaskCommand.php
+│   │   │   │   └── CreateTaskCommandHandler.php
+│   │   │   └── UpdateTask
+│   │   │       ├── UpdateTaskCommand.php
+│   │   │       └── UpdateTaskCommandHandler.php
+│   │   ├── Query // Query handlers for read operations
+│   │   │   ├── GetTask
+│   │   │   │   ├── GetTaskQuery.php
+│   │   │   │   └── GetTaskQueryHandler.php
+│   │   │   └── GetAllTasks
+│   │   │       ├── GetAllTasksQuery.php
+│   │   │       └── GetAllTasksQueryHandler.php
+│   │   └── Controller // API controllers
+│   │       └── TaskController.php
+│   ├── Domain // Domain layer - business logic and entities
+│   │   ├── Entity // Domain entities
+│   │   │   └── Task.php
+│   │   ├── Enum // Domain enums
+│   │   │   ├── TaskPriority.php
+│   │   │   └── TaskStatus.php
+│   │   └── Repository // Repository interfaces
+│   │       └── TaskRepositoryInterface.php
+│   └── Infrastructure // Infrastructure layer - implementations
+│       ├── Repository // Repository implementations
+│       │   └── TaskRepository.php
+│       └── Persistence // Persistence configurations
+│           └── Doctrine
+│               └── Mapping
+│                   └── Task.orm.xml
+└── Shared // Shared Kernel: Common infrastructure and domain shared between the different Bounded Contexts
 ```
 
 ### Command Query Responsibility Segregation (CQRS)
 
-The application implements CQRS pattern to separate read and write operations. Commands modify system state through dedicated handlers, while queries retrieve data without changing state. This separation allows for optimized data models for each operation type and improved scalability. Commands and queries are processed through dedicated buses that route them to appropriate handlers.
+The application implements CQRS pattern to separate read and write operations. Commands modify system state through dedicated handlers, while queries retrieve data without changing state. This separation allows for optimized data models for each operation type and improved scalability.
 
 
 ### Repository pattern
 
-Repositories follow a consistent interface pattern with methods like `find`, `findAll`, and `save`. Domain repositories define the contract in the Domain layer, while implementations are in the Infrastructure layer using Doctrine ORM.
+Repositories follow a consistent interface pattern with methods like `find`, `findAll`, `findBy`. Domain repositories define the contract in the Domain layer, while implementations are in the Infrastructure layer using Doctrine ORM.
 
 An example [here](src/User/Domain/Repository/UserRepositoryInterface.php)
 and its implementation [here](src/User/Infrastructure/Repository/UserRepository.php).
@@ -262,7 +262,7 @@ An example of an entity [here](src/User/Domain/Entity/User.php). All entities fo
 
 ### Command Bus
 
-The [Command Bus](src/Shared/Infrastructure/Bus/CommandBus.php) using the Symfony Message Bus.
+There is one implementation of the [Command Bus](src/Shared/Infrastructure/Bus/CommandBus.php) using the Symfony Message Bus.
 
 ### Query Bus
 
