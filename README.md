@@ -1,6 +1,7 @@
-# Task Management API
+# Symfony DDD Service
 
-A task management system built with PHP and Symfony, following Domain-Driven Design (DDD) and Command Query Responsibility Segregation (CQRS) patterns.
+Symfony service demonstrating Domain-Driven Design (DDD) and Command Query Responsibility Segregation (CQRS) patterns.  
+This project is a PHP-based API structured as a service following DDD principles.
 
 ## Table of Contents
 - [Overview](#overview)
@@ -19,7 +20,7 @@ A task management system built with PHP and Symfony, following Domain-Driven Des
 
 ## Overview
 
-The Task Management API is a PHP-based application built with Symfony that enables users to manage tasks, projects, and team collaboration. The system features user authentication, task organization, project grouping, and commenting functionality. It follows Domain-Driven Design principles with a modular architecture.
+This is a PHP-based application built with Symfony that enables users to manage tasks, projects, and team collaboration. The system features user authentication, task organization, project grouping, and commenting functionality. It follows Domain-Driven Design principles with a modular architecture.
 
 ## Technology Stack
 
