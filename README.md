@@ -56,8 +56,8 @@ Key environment variables in `.env.local`:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yognevoy/task-management-api.git
-cd task-management-api
+git clone https://github.com/yognevoy/symfony-ddd-service.git
+cd symfony-ddd-service
 ```
 
 ### 2. Copy Environment Configuration
@@ -365,7 +365,7 @@ docker exec -it task_management_api_php ./bin/phpunit
 
 ## How to Contribute
 
-If you find a bug or have a feature request, please check the [Issues page](https://github.com/yognevoy/task-management-api/issues) before creating a new one. For code contributions, fork the repository, make your changes on a new branch, and submit a pull request with a clear description of the changes. Please make sure to test your changes thoroughly before submitting.
+If you find a bug or have a feature request, please check the [Issues page](https://github.com/yognevoy/symfony-ddd-service/issues) before creating a new one. For code contributions, fork the repository, make your changes on a new branch, and submit a pull request with a clear description of the changes. Please make sure to test your changes thoroughly before submitting.
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE.txt](https://github.com/yognevoy/task-management-api/blob/main/LICENSE.txt) file for details.
+This project is licensed under the MIT License - see the [LICENSE.txt](https://github.com/yognevoy/symfony-ddd-service/blob/main/LICENSE.txt) file for details.
