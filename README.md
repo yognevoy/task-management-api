@@ -76,7 +76,7 @@ docker-compose up -d --build
 
 ```bash
 # Enter the PHP container
-docker exec -it task_management_api_php bash
+docker exec -it symfony_ddd_service_php bash
 
 # Install dependencies
 composer install
@@ -354,7 +354,7 @@ erDiagram
 
 ```bash
 # Run all tests
-docker exec -it task_management_api_php ./bin/phpunit
+docker exec -it symfony_ddd_service_php ./bin/phpunit
 ```
 
 ### Test Structure
